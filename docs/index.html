@@ -56,7 +56,7 @@ body.unlocked .cell.lk{cursor:pointer;opacity:1;outline:1px dashed #d97706}
 .empty{visibility:hidden}
 .W{background:var(--wbg);color:#14532d}.A{background:var(--abg);color:#7f1d1d}.S{background:var(--sbg);color:#78350f}
 .L{background:var(--lbg);color:#1e3a8a}.R{background:var(--rbg);color:#334155}.PH{background:var(--phbg);color:#4c1d95}
-.PHW{background:#7c3aed;color:#fff}.PW,.SUN,.NW{background:var(--offbg);color:var(--off)}
+.PHW{background:#7c3aed;color:#fff}.P{background:#ccfbf1;color:#134e4a;border-color:#2dd4bf!important}.PW,.SUN,.NW{background:var(--offbg);color:var(--off)}
 .tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px;font-size:12.5px}
 .tools input[type=number]{width:60px;padding:4px;border:1px solid var(--line);border-radius:5px}
 .tools input[type=text]{flex:1;min-width:180px;padding:5px 8px;border:1px solid var(--line);border-radius:5px}
@@ -99,7 +99,7 @@ footer{position:fixed;bottom:0;left:0;right:0;background:#0f2537;color:#9fb6c6;f
   <div class="banner">⚠ <b>Run-wide carried items:</b> June standby back-pay <b>R28,583.92</b> prepayment (load per “Standby corrections” tab when cash flow allows) · D319 recover <b>R1,269.66</b> · E420 refund <b>R300</b> · A011 new loan deduct <b>R438.20</b> (10% cap). OT hours &amp; back-pay now entered per card. <button class="mini" id="loadBP" style="background:#0f766e;color:#fff">▶ Load open corrections</button> <span style="color:var(--mut)">(E420 +300 · D319 −1,269.66 only. June standby back-pay FULLY SETTLED on the July run — Byron 26-Aug; F515 top-up R868.33 covered the one July shortfall, paid 23 Jul. All other back-pay: Byron enters manually per card)</span></div>
   <div class="leg">
     <span class="W">W worked</span><span class="A">A absent (no pay)</span><span class="S">S sick</span><span class="L">L leave</span>
-    <span class="R">R rain (no pay)</span><span class="PH">PH pub. holiday (paid)</span><span class="PHW">PHW holiday WORKED</span><span class="PW">off / payweekend</span>
+    <span class="R">R rain (no pay)</span><span class="PH">PH pub. holiday (paid)</span><span class="PHW">PHW holiday WORKED</span><span class="P" style="padding:2px 8px;border-radius:4px;font-weight:700">P partial hrs (min 4h)</span><span class="PW">off / payweekend</span>
   </div>
   <div style="font-size:12px;color:var(--mut)">Tap a day to cycle W → A → S → L. Tap 10 Aug to toggle PH ↔ PHW. Grey days are fixed — tick “unlock fixed days” to override. Everything autosaves in this browser; export CSV when a team is done.</div>
   <div id="list"></div>
@@ -169,7 +169,23 @@ let cur="Team A";try{cur=localStorage.getItem(KEY+"-tab")||"Team A"}catch(e){}
 const $=s=>document.querySelector(s);
 function emp(c){if(c&&c[0]==="_")c="_x";if(!st[c])st[c]={d:{},tally:"",note:"",done:false};return st[c]}
 function dayVal(e,d){const s=emp(e.c);if(s.d[d.d])return s.d[d.d];if(e.nopay&&!d.lock&&(d.def==="W"||d.def==="PH"))return"A";return d.def}
-function counts(e){const r={W:0,A:0,S:0,L:0,R:0,PH:0,PHW:0};DATA.days.forEach(d=>{const v=dayVal(e,d);if(r[v]!==undefined)r[v]++});return r}
+function pHrs(e,d){const s=emp(e.c);return(s.h&&s.h[d.d]!==undefined&&s.h[d.d]!=="")?+s.h[d.d]:null}
+function payHrs(h){return h<=0?0:(h>=7?7:Math.max(4,h))}
+function otSum(e,k){const m=emp(e.c)[k]||{};let x=0;for(const v of Object.values(m))x+=(+v||0);return x}
+function ot15Tot(e){return(+emp(e.c).ot15||0)+otSum(e,"o15")}
+function ot2Tot(e){return(+emp(e.c).ot2||0)+otSum(e,"o2")}
+function dpForm(e){const d=DATA.days.find(x=>x.d===window._dp.iso);const s=emp(e.c);const gv=m=>((s[m]||{})[d.d]??"");
+ return '<div style="background:#f0fdfa;border:1px solid #2dd4bf;border-radius:8px;padding:10px;margin-top:8px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;font-size:12.5px" data-dpf="1">'
+ +'<b>'+d.w+' '+d.lbl+' · '+e.c+'</b>'
+ +'<label>Worked hrs <input type="number" step="0.25" min="0" max="12" data-dp="h" value="'+gv("h")+'" style="width:64px" placeholder="full"> <small>(&lt;4h pays 4h)</small></label>'
+ +'<label>OT1.5× <input type="number" step="0.25" min="0" data-dp="o15" value="'+gv("o15")+'" style="width:60px">h</label>'
+ +'<label>OT2× <input type="number" step="0.25" min="0" data-dp="o2" value="'+gv("o2")+'" style="width:60px">h</label>'
+ +'<button class="mini" style="background:#0f766e;color:#fff" data-dpsave="'+e.c+'">Save</button>'
+ +'<button class="mini" data-dpclearday="'+e.c+'">Clear day</button>'
+ +'<button class="mini" data-dpcancel="1">Close</button></div>'}
+function counts(e){const r={W:0,A:0,S:0,L:0,R:0,PH:0,PHW:0,PhA:0,PhP:0};DATA.days.forEach(d=>{const ph=pHrs(e,d);
+ if(ph!==null){const pay=payHrs(ph);if(pay>=7){r.W++}else{r.PhA+=ph;r.PhP+=pay}return}
+ const v=dayVal(e,d);if(r[v]!==undefined)r[v]++});return r}
 let undoStack=[],redoStack=[],lastSnap=null;
 function snapUI(){const u=document.getElementById("undoB");if(u){u.textContent="↶ Undo ("+undoStack.length+")";u.style.opacity=undoStack.length?1:.45}const r=document.getElementById("redoB");if(r)r.style.opacity=redoStack.length?1:.45}
 function save(noHist){st._ts=Date.now();
@@ -182,8 +198,8 @@ function renderTabs(){const n=$("#tabs");n.innerHTML="";teamList().forEach(t=>{c
 const sbn=Object.values(st._sb||{}).filter(x=>+x.d>0).length;
 const sb=document.createElement("button");sb.className=cur==="__SB__"?"on":"";sb.innerHTML='⚡ Standby <span class="tb">'+sbn+"/"+DATA.standby.length+"</span>";sb.onclick=()=>{cur="__SB__";try{localStorage.setItem(KEY+"-tab",cur)}catch(e){};renderTabs();renderList()};n.appendChild(sb);
 const done=EMPS().filter(e=>emp(e.c).done).length;$("#pbar").style.width=(100*done/EMPS().length)+"%";$("#ptxt").textContent=done+" / "+EMPS().length+" employees done"}
-function chipHtml(e){const s=emp(e.c);let ex="";if(+s.ot15||+s.ot2)ex+='<span class="chip L">OT</span>';if(+s.bpA)ex+='<span class="chip '+(+s.bpA<0?"A":"S")+'">R'+(+s.bpA).toFixed(0)+'</span>';
-if(e.fx)return ex+'<span class="fx">FIXED — salaried</span>';const c=counts(e);let h=ex+'<span class="chip W">'+c.W+'d</span><span class="chip PH">PH '+(c.PH||c.PHW)+(c.PHW?"·worked":"")+'</span>';
+function chipHtml(e){const s=emp(e.c);let ex="";if(ot15Tot(e)||ot2Tot(e))ex+='<span class="chip L">OT'+((ot15Tot(e)||0)+(ot2Tot(e)||0))+'h</span>';if(+s.bpA)ex+='<span class="chip '+(+s.bpA<0?"A":"S")+'">R'+(+s.bpA).toFixed(0)+'</span>';
+if(e.fx)return ex+'<span class="fx">FIXED — salaried</span>';const c=counts(e);let h=ex+'<span class="chip W">'+c.W+'d</span>'+(c.PhP?'<span class="chip L" title="partial days — payable hrs (min-4h rule)">+'+c.PhP+'h</span>':'')+'<span class="chip PH">PH '+(c.PH||c.PHW)+(c.PHW?"·worked":"")+'</span>';
 if(c.S)h+='<span class="chip S">S'+c.S+'</span>';if(c.L)h+='<span class="chip L">L'+c.L+'</span>';if(c.A)h+='<span class="chip A">A'+c.A+'</span>';return h}
 function matchIcon(e){const s=emp(e.c);if(e.fx||s.tally==="")return"";return(+s.tally===counts(e).W)?"✅":"❌"}
 function edForm(e){const isNew=!e;const teams=[...new Set(DATA.emps.map(x=>x.t))];
@@ -204,14 +220,15 @@ if(!e.fx)h+='<input class="tally" type="number" min="0" max="24" placeholder="ta
 h+='<button class="mini" data-edit="'+e.c+'" onclick="event.stopPropagation()" title="edit employee">✎</button><label class="dn" onclick="event.stopPropagation()"><input type="checkbox" data-done="'+e.c+'" '+(s.done?"checked":"")+'>done</label></div>';
 if(e.f)h+='<div class="flag'+(e.nopay?" red":"")+'">⚑ '+e.f+'</div>';
 if(editSet.has(e.c))h+=edForm(e);
-h+='<div class="body">'+(e.fx?'<div style="font-size:12.5px;color:var(--mut);padding:6px 0">Salaried — Basic Salary line, no day entry. Use the note for exceptions only.</div>':gridHtml(e))+
-'<div class="tools">OT1.5× <input type="number" step="0.5" min="0" data-ot15="'+e.c+'" value="'+(s.ot15||"")+'" style="width:58px" placeholder="h">h · OT2× <input type="number" step="0.5" min="0" data-ot2="'+e.c+'" value="'+(s.ot2||"")+'" style="width:58px" placeholder="h">h · Back-pay R <input type="number" step="0.01" data-bpa="'+e.c+'" value="'+(s.bpA||"")+'" style="width:84px" placeholder="±0.00"> <input type="text" data-bpw="'+e.c+'" value="'+(s.bpWhy||"").replace(/"/g,"&quot;")+'" placeholder="back-pay reason" style="flex:1;min-width:120px"></div>'+
+h+='<div class="body">'+(e.fx?'<div style="font-size:12.5px;color:var(--mut);padding:6px 0">Salaried — Basic Salary line, no day entry. Use the note for exceptions only.</div>':(gridHtml(e)+((window._dp&&window._dp.c===e.c)?dpForm(e):"")))+
+'<div class="tools">extra OT1.5× <input type="number" step="0.5" min="0" data-ot15="'+e.c+'" value="'+(s.ot15||"")+'" style="width:58px" placeholder="h">h · OT2× <input type="number" step="0.5" min="0" data-ot2="'+e.c+'" value="'+(s.ot2||"")+'" style="width:58px" placeholder="h">h · Back-pay R <input type="number" step="0.01" data-bpa="'+e.c+'" value="'+(s.bpA||"")+'" style="width:84px" placeholder="±0.00"> <input type="text" data-bpw="'+e.c+'" value="'+(s.bpWhy||"").replace(/"/g,"&quot;")+'" placeholder="back-pay reason" style="flex:1;min-width:120px"></div>'+
 '<div class="tools"><input type="text" placeholder="note for Phil (sick note ref, part-day, etc.)" value="'+(s.note||"").replace(/"/g,"&quot;")+'" data-note="'+e.c+'">'+(e.fx?"":'<button class="mini" data-def="'+e.c+'">↺ defaults</button>')+'</div></div>';
 card.innerHTML=h;return card}
 function gridHtml(e){let h='<div class="grid"><div class="dow">Mo</div><div class="dow">Tu</div><div class="dow">We</div><div class="dow">Th</div><div class="dow">Fr</div><div class="dow">Sa</div><div class="dow">Su</div>';
 const pad={"Mo":0,"Tu":1,"We":2,"Th":3,"Fr":4,"Sa":5,"Su":6}[DATA.days[0].w];
 for(let i=0;i<pad;i++)h+='<div class="cell empty"></div>';
-DATA.days.forEach(d=>{const v=dayVal(e,d);h+='<div class="cell '+v+(d.lock?" lk":"")+'" data-day="'+d.d+'" data-emp="'+e.c+'" title="'+(d.why||d.lbl)+'"><small>'+d.w+'</small><b>'+d.lbl+'</b><span class="st">'+v+'</span></div>'});
+DATA.days.forEach(d=>{const s2=emp(e.c);const hasOT=((s2.o15||{})[d.d]||(s2.o2||{})[d.d]);const ph=pHrs(e,d);const v=(ph!==null)?"P":dayVal(e,d);const st=((ph!==null)?(payHrs(ph)+"h"):v)+(hasOT?"⏱":"");const ttl=(ph!==null)?("Worked "+ph+"h → payable "+payHrs(ph)+"h (min-4h rule). Right-click to change/clear."):(d.why||d.lbl)+" — right-click to enter partial hours";
+h+='<div class="cell '+v+(d.lock?" lk":"")+'" data-day="'+d.d+'" data-emp="'+e.c+'" title="'+ttl+'"><small>'+d.w+'</small><b>'+d.lbl+'</b><span class="st">'+st+'</span></div>'});
 return h+"</div>"}
 const openSet=new Set();
 function sbGet(c){if(!st._sb)st._sb={};if(!st._sb[c])st._sb[c]={};return st._sb[c]}
@@ -246,6 +263,7 @@ function renderList(){const L=$("#list");L.innerHTML="";
  const d=document.createElement("div");d.innerHTML=editSet.has("__new__")?edForm(null):'<button class="mini" data-eadd="1" style="margin:6px 0 14px">＋ Add employee to '+cur+'</button>';L.appendChild(d)}
 document.addEventListener("click",ev=>{
  const c=ev.target.closest(".cell:not(.empty)");if(c){const e=EMPS().find(x=>x.c===c.dataset.emp);const d=DATA.days.find(x=>x.d===c.dataset.day);
+   if(pHrs(e,d)!==null){alert("Partial-hours day ("+pHrs(e,d)+"h worked → "+payHrs(pHrs(e,d))+"h payable). Right-click it to change or clear.");return}
    if(d.lock&&!document.body.classList.contains("unlocked"))return;
    const s=emp(e.c);const v=dayVal(e,d);let nv;
    if(d.d==="2026-08-10"){const seq=["PH","PHW","A"];nv=seq[(seq.indexOf(v)+1)%seq.length]}
@@ -255,6 +273,8 @@ document.addEventListener("click",ev=>{
    save();renderList();renderTabs();return}
  const h=ev.target.closest(".ehead");if(h){const id=h.dataset.open;openSet.has(id)?openSet.delete(id):openSet.add(id);renderList()}
 });
+document.addEventListener("contextmenu",ev=>{const c=ev.target.closest(".cell:not(.empty)");if(!c)return;ev.preventDefault();
+ const e=EMPS().find(x=>x.c===c.dataset.emp);if(!e||e.fx)return;window._dp={c:e.c,iso:c.dataset.day};openSet.add(e.c);renderList()});
 document.addEventListener("change",ev=>{const t=ev.target;
  if(t.dataset.sbd!==undefined){sbGet(t.dataset.sbd).d=t.value;save();renderTabs();renderList();return}
  if(t.dataset.sbr!==undefined){sbGet(t.dataset.sbr).r=t.value;save();renderList();return}
@@ -276,6 +296,13 @@ document.addEventListener("click",ev=>{
    if(sbList().some(x=>x.c===c)){alert(c+" already on the standby list");return}
    const r=parseFloat(prompt("Rate per day for "+c+":","62.65")||"62.65");const s=sbGet(c);s.added=true;s.r=r;logEdit(c,"STANDBY-ADD","—","rate "+r,"added to standby during entry");save();renderTabs();renderList();return}
  if(ev.target.closest("[data-ecancel]")){editSet.clear();renderList();return}
+ if(ev.target.closest("[data-dpcancel]")){window._dp=null;renderList();return}
+ const dpc=ev.target.closest("[data-dpclearday]");if(dpc){const s=emp(dpc.dataset.dpclearday);const iso=window._dp.iso;["h","o15","o2"].forEach(k=>{if(s[k])delete s[k][iso]});logEdit(dpc.dataset.dpclearday,"DAY-EXTRAS",iso,"cleared","right-click day entry");window._dp=null;save();renderTabs();renderList();return}
+ const dps=ev.target.closest("[data-dpsave]");if(dps){const code=dps.dataset.dpsave;const s=emp(code);const iso=window._dp.iso;const f=document.querySelector('[data-dpf]');const g=k=>f.querySelector('[data-dp="'+k+'"]').value.trim();
+   let bad=false;["h","o15","o2"].forEach(k=>{const v=g(k);if(v!==""&&(isNaN(+v)||+v<0||+v>12))bad=true});if(bad){alert("Hours must be 0–12");return}
+   ["h","o15","o2"].forEach(k=>{const v=g(k);if(!s[k])s[k]={};if(v===""){delete s[k][iso]}else{s[k][iso]=+v}});
+   const dd=DATA.days.find(x=>x.d===iso);logEdit(code,"DAY-EXTRAS",dd.lbl,"worked="+(g("h")||"full")+"h OT1.5="+(g("o15")||0)+"h OT2="+(g("o2")||0)+"h","right-click day entry (min-4h rule applies)");
+   window._dp=null;save();renderTabs();renderList();return}
  const sb=ev.target.closest("[data-esave]");if(sb){
    const id=sb.dataset.esave;const form=document.querySelector('[data-eform="'+id+'"]');const g=f=>form.querySelector('[data-f="'+f+'"]');
    if(!st._emp)st._emp={};
@@ -302,13 +329,13 @@ document.addEventListener("click",ev=>{
    editSet.clear();save();renderTabs();renderList();return}
 });
 function rows(){return EMPS().map(e=>{const c=counts(e);const s=emp(e.c);
- const ds=DATA.days.map(d=>d.lbl.replace(" ","")+"="+dayVal(e,d)).join(";");
- return[e.t,e.c,e.n,e.fx?"FIXED":"DAILY",(e.added?"ADDED":(e.ed&&Object.keys(e.ed).length?"EDITED":"")),(e.ed&&e.ed.why)||"",s.tally||"",e.fx?"":c.W,e.fx?"":c.PH,e.fx?"":c.PHW,e.fx?"":c.S,e.fx?"":c.L,e.fx?"":c.A,e.fx?"":c.R,(s.ot15||""),(s.ot2||""),(s.bpA||""),(s.bpWhy||""),(s.note||""),s.done?"YES":"",sbD(e.c),sbR2(e.c),sbT(e.c),e.fx?"":ds]})}
+ const ds=DATA.days.map(d=>{const ph=pHrs(e,d);const s3=emp(e.c);const o=((s3.o15||{})[d.d]?("+OT1.5:"+s3.o15[d.d]+"h"):"")+((s3.o2||{})[d.d]?("+OT2:"+s3.o2[d.d]+"h"):"");return d.lbl.replace(" ","")+"="+(ph!==null?("P"+ph+"h>"+payHrs(ph)+"h"):dayVal(e,d))+o}).join(";");
+ return[e.t,e.c,e.n,e.fx?"FIXED":"DAILY",(e.added?"ADDED":(e.ed&&Object.keys(e.ed).length?"EDITED":"")),(e.ed&&e.ed.why)||"",s.tally||"",e.fx?"":c.W,e.fx?"":c.PH,e.fx?"":c.PHW,e.fx?"":c.S,e.fx?"":c.L,e.fx?"":c.A,e.fx?"":c.R,e.fx?"":(c.PhA||""),e.fx?"":(c.PhP||""),(ot15Tot(e)||""),(ot2Tot(e)||""),(s.bpA||""),(s.bpWhy||""),(s.note||""),s.done?"YES":"",sbD(e.c),sbR2(e.c),sbT(e.c),e.fx?"":ds]})}
 function sbX(c){return sbList().find(y=>y.c===c)}
 function sbD(c){const x=sbX(c);if(!x)return"";return sbDays(x)||""}
 function sbR2(c){const x=sbX(c);return x?sbRate(x):""}
 function sbT(c){const x=sbX(c);if(!x)return"";const d=sbDays(x);return d?(d*sbRate(x)).toFixed(2):""}
-const HDR=["Team","Code","Name","Type","Edited","EditReason","PaperTally","DAYS_Worked","PH","PHW","Sick","Leave","AbsentNoPay","RainNoPay","OT15h","OT2h","BackpayR","BackpayReason","Note","Done","StandbyDays","StandbyRate","StandbyTotal","DayDetail"];
+const HDR=["Team","Code","Name","Type","Edited","EditReason","PaperTally","DAYS_Worked","PH","PHW","Sick","Leave","AbsentNoPay","RainNoPay","PartialHrsActual","PartialHrsPayable","OT15h","OT2h","BackpayR","BackpayReason","Note","Done","StandbyDays","StandbyRate","StandbyTotal","DayDetail"];
 $("#exCsv").onclick=()=>{const csv=[HDR,...rows()].map(r=>r.map(x=>'"'+String(x).replace(/"/g,'""')+'"').join(",")).join("\r\n");
  const a=document.createElement("a");a.href=URL.createObjectURL(new Blob(["﻿"+csv],{type:"text/csv"}));a.download="August_2026_Timesheet_Entry_EXPORT_"+new Date().toISOString().slice(0,10)+".csv";a.click()};
 $("#exCopy").onclick=()=>{const t=[HDR.slice(0,14),...rows().map(r=>r.slice(0,14))].map(r=>r.join("\t")).join("\n");navigator.clipboard.writeText(t).then(()=>alert("Summary copied — paste into Excel/chat"))};
