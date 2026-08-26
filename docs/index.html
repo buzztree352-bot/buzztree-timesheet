@@ -269,12 +269,40 @@ function dedGet(c){if(!st._ded)st._ded={};if(!st._ded[c])st._ded[c]={};return st
 function philRows(){return EMPS().map(e=>{const c=counts(e);const s=emp(e.c);const d=(st._ded||{})[e.c]||{};
  const sx=sbX(e.c);const sd=sx?sbDays(sx):0;const sr=sx?sbRate(sx):"";const stot=sd?(sd*sr):0;
  return {c:e.c,n:e.n,fx:e.fx,days:e.fx?"":c.W,ph:e.fx?"":c.PH,phw:e.fx?"":c.PHW,part:e.fx?"":(c.PhP||""),o15:ot15Tot(e)||"",o2:ot2Tot(e)||"",sick:e.fx?"":(c.S||""),lv:e.fx?"":(c.L||""),fn:e.fx?"":(c.F||""),sd:sd||"",sr:sd?sr:"",stot:sd?stot.toFixed(2):"",bp:s.bpA||"",bpw:s.bpWhy||"",loan:d.l||"",fuel:d.f||"",oth:d.o||"",note:[s.note||"",d.w||""].filter(Boolean).join(" · ")}})}
+function philSpecifics(){
+ const out={sal:[],alias:[],part:[],sick:[],fun:[],bp:[],ded:[],zero:[]};
+ EMPS().forEach(e=>{const c=counts(e);const s=emp(e.c);const d=(st._ded||{})[e.c]||{};
+  if(e.fx)out.sal.push(e.c);
+  if(e.alias)out.alias.push(e.c+" (paper: "+e.alias+")");
+  if(c.PhP)out.part.push(e.c+" "+e.n.split(" ")[0]+": "+c.PhP+"h payable (actual "+c.PhA+"h — min-4h rule)");
+  if(c.S)out.sick.push(e.c+" "+e.n+": "+c.S+" day"+(c.S>1?"s":""));
+  if(c.F)out.fun.push(e.c+" "+e.n+": "+c.F+" day"+(c.F>1?"s":""));
+  if(+s.bpA)out.bp.push(e.c+" "+e.n+": R"+(+s.bpA).toFixed(2)+" — "+(s.bpWhy||""));
+  const dd=[];if(+d.l)dd.push("loan R"+(+d.l).toFixed(2));if(+d.f)dd.push("fuel R"+(+d.f).toFixed(2));if(+d.o)dd.push("other R"+(+d.o).toFixed(2));
+  if(dd.length)out.ded.push(e.c+" "+e.n+": "+dd.join(" + ")+(d.w?" — "+d.w:""));
+  if(!e.fx&&c.W===0&&c.PH===0&&c.S===0&&c.F===0)out.zero.push(e.c+" "+e.n);
+ });return out}
 function renderPhil(L){
- const rows=philRows();const num=k=>rows.reduce((a,r)=>a+(+r[k]||0),0);
- let h='<div class="banner">📋 <b>For Phil — Sage Pastel keying sheet.</b> One row per employee, exactly the payslip lines: no logic needed. SALARIED = Basic Salary as June (plus whatever appears in their row). Partial hrs are PAYABLE hours (min-4h rule applied). <button class="mini" id="philCopy" style="background:#0f766e;color:#fff">⧉ Copy for Phil</button> <button class="mini" onclick="window.print()">🖨 Print</button></div>';
+ const rows=philRows();const num=k=>rows.reduce((a,r)=>a+(+r[k]||0),0);const sp=philSpecifics();
+ let h='<div class="banner noprint">📋 This page IS the deliverable — <b>🖨 Print → Save as PDF (Landscape)</b> and send that to Phil; generated live from the entered data. <button class="mini" id="philCopy" style="background:#0f766e;color:#fff">⧉ Copy for Phil</button> <button class="mini" onclick="window.print()">🖨 Print / Save as PDF</button></div>';
+ h+='<div class="prephead"><h2>BUZZTREE (PTY) LTD — AUGUST 2026 PAYRUN · Sage Pastel keying sheet</h2>'
+  +'<div class="pline">Period Thu 23 Jul → Wed 26 Aug 2026 (5-week cycle) · <b>23 working days + 1 public holiday (Mon 10 Aug, paid)</b> · Rain 11–12 Aug and Sat 22 Aug: no work, no pay · <b>PAY DAY Thu 27 Aug 2026</b></div>'
+  +'<div class="pline">Generated live from the Buzztree timesheet app · '+new Date().toLocaleString()+' · signed in: '+(fbUser?fbUser.email:"—")+' · all entries audit-logged</div>'
+  +'<div class="ptots"><span>'+num("days")+' worked days</span><span>'+num("ph")+' PH</span><span>'+num("part")+' partial hrs</span><span>OT1.5 '+num("o15")+'h</span><span>OT2 '+num("o2")+'h</span><span>'+num("sick")+' sick</span><span>'+num("fn")+' funeral</span><span>standby R '+num("stot").toFixed(2)+'</span><span>backpay R '+num("bp").toFixed(2)+'</span><span>deductions R '+(num("loan")+num("fuel")+num("oth")).toFixed(2)+'</span></div></div>';
+ h+='<div class="pspec"><b class="h">SPECIFICS FOR THIS RUN</b>'
+  +'<b class="h">Salaried (Basic Salary — no daily wage):</b> '+sp.sal.join(", ")+'. A020 newly confirmed salaried this run.'
+  +(sp.alias.length?'<b class="h">Code changes:</b> '+sp.alias.join("; ")+'.':"")
+  +(sp.part.length?'<b class="h">Partial hours (sectoral min-4h):</b> '+sp.part.join(" · "):"")
+  +(sp.sick.length?'<b class="h">Paid sick (certificates filed):</b> '+sp.sick.join(" · "):"")
+  +(sp.fun.length?'<b class="h">Paid family-responsibility / funeral (death certificates filed):</b> '+sp.fun.join(" · "):"")
+  +(sp.bp.length?'<b class="h">Back-pay:</b> '+sp.bp.join(" · "):"")
+  +(sp.ded.length?'<b class="h">Deductions:</b> '+sp.ded.join(" · ")+' (A011: cap at 10% of actual gross)':"")
+  +(sp.zero.length?'<b class="h">Zero pay (no days, no PH):</b> '+sp.zero.join(", "):"")
+  +'<b class="h">Standby rates:</b> general R62.65/day (June-corrections basis) · drivers R114.765 — amounts per person in the table.</div>';
  h+='<div class="ptwrap"><table class="ptable"><tr><th>Code</th><th>Employee</th><th>Basis</th><th>Days</th><th>PH</th><th>PHW</th><th>Part hrs</th><th>OT1.5 h</th><th>OT2 h</th><th>Sick</th><th>Leave</th><th>Funeral</th><th>Stby d</th><th>Stby rate</th><th>Stby R</th><th>Backpay R</th><th>Backpay reason</th><th>Loan ded R</th><th>Fuel ded R</th><th>Other ded R</th><th>Note</th></tr>';
  rows.forEach(r=>{h+='<tr><td><b>'+r.c+'</b></td><td>'+r.n+'</td><td>'+(r.fx?"SALARIED":"daily")+'</td><td>'+r.days+'</td><td>'+r.ph+'</td><td>'+r.phw+'</td><td>'+r.part+'</td><td>'+r.o15+'</td><td>'+r.o2+'</td><td>'+r.sick+'</td><td>'+r.lv+'</td><td>'+r.fn+'</td><td>'+r.sd+'</td><td>'+r.sr+'</td><td>'+r.stot+'</td><td>'+r.bp+'</td><td>'+r.bpw+'</td><td>'+r.loan+'</td><td>'+r.fuel+'</td><td>'+r.oth+'</td><td>'+r.note+'</td></tr>'});
  h+='<tr class="tot"><td colspan="3">TOTALS</td><td>'+num("days")+'</td><td>'+num("ph")+'</td><td>'+num("phw")+'</td><td>'+num("part")+'</td><td>'+num("o15")+'</td><td>'+num("o2")+'</td><td>'+num("sick")+'</td><td>'+num("lv")+'</td><td>'+num("fn")+'</td><td>'+num("sd")+'</td><td></td><td>'+num("stot").toFixed(2)+'</td><td>'+num("bp").toFixed(2)+'</td><td></td><td>'+num("loan").toFixed(2)+'</td><td>'+num("fuel").toFixed(2)+'</td><td>'+num("oth").toFixed(2)+'</td><td></td></tr></table></div>';
+ h+='<div class="psig"><span>Prepared: Byron (Buzztree) ______________</span><span>Captured in Pastel: Phil ______________</span><span>Date: ____________</span></div>';
  const dv=document.createElement("div");dv.innerHTML=h;L.appendChild(dv);
  dv.querySelector("#philCopy").onclick=()=>{const H=["Code","Employee","Basis","Days","PH","PHW","PartHrs","OT1.5h","OT2h","Sick","Leave","Funeral","StbyDays","StbyRate","StbyR","BackpayR","BackpayReason","LoanDedR","FuelDedR","OtherDedR","Note"];
   const tsv=[H.join("\t")].concat(philRows().map(r=>[r.c,r.n,(r.fx?"SALARIED":"daily"),r.days,r.ph,r.phw,r.part,r.o15,r.o2,r.sick,r.lv,r.fn,r.sd,r.sr,r.stot,r.bp,r.bpw,r.loan,r.fuel,r.oth,r.note].join("\t"))).join("\n");
