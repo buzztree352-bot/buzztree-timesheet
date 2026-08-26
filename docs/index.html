@@ -68,7 +68,13 @@ footer{position:fixed;bottom:0;left:0;right:0;background:#0f2537;color:#9fb6c6;f
 .sbrow .name{flex:1;min-width:140px}.sbrow input{width:74px;padding:4px;border:1px solid var(--line);border-radius:5px;text-align:center;font-size:13px}
 .sbrow .tot{width:92px;text-align:right;font-weight:700}.sbg{margin:14px 0 4px;font-weight:800;font-size:13px;color:#0f2537}
 .sbref{font-size:11px;color:var(--mut);width:52px}.sbtotal{position:sticky;bottom:34px;background:#0f766e;color:#fff;border-radius:8px;padding:8px 14px;font-weight:700;display:flex;gap:18px;flex-wrap:wrap}
-@media print{header,nav,footer,.tools{display:none}}
+.ptwrap{overflow-x:auto;background:#fff;border:1px solid var(--line);border-radius:10px;padding:6px}
+.ptable{border-collapse:collapse;font-size:11.5px;white-space:nowrap;width:100%}
+.ptable th{background:#0f2537;color:#fff;padding:4px 7px;text-align:left;position:sticky;top:0}
+.ptable td{border-bottom:1px solid var(--line);padding:3px 7px}
+.ptable tr:nth-child(even){background:#f8fafc}.ptable .tot td{background:#0f766e;color:#fff;font-weight:800}
+.frow{display:flex;gap:8px;align-items:center;font-size:12px;background:#fff;border:1px solid var(--line);border-radius:6px;padding:4px 8px;margin:3px 0}
+@media print{header,nav,footer,.tools,.banner,.leg{display:none}}
 </style>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
@@ -199,6 +205,8 @@ function renderTabs(){const n=$("#tabs");n.innerHTML="";teamList().forEach(t=>{c
 const sbn=Object.values(st._sb||{}).filter(x=>+x.d>0).length;
 const sb=document.createElement("button");sb.className=cur==="__SB__"?"on":"";sb.innerHTML='⚡ Standby <span class="tb">'+sbn+"/"+DATA.standby.length+"</span>";sb.onclick=()=>{cur="__SB__";try{localStorage.setItem(KEY+"-tab",cur)}catch(e){};renderTabs();renderList()};n.appendChild(sb);
 const dn=Object.values(st._ded||{}).filter(x=>(+x.l||+x.f||+x.o)).length;
+const pb=document.createElement("button");pb.className=cur==="__PHIL__"?"on":"";pb.innerHTML='📋 For Phil';pb.onclick=()=>{cur="__PHIL__";try{localStorage.setItem(KEY+"-tab",cur)}catch(e){};renderTabs();renderList()};n.appendChild(pb);
+const lb=document.createElement("button");lb.className=cur==="__LED__"?"on":"";lb.innerHTML='📒 Ledger';lb.onclick=()=>{cur="__LED__";try{localStorage.setItem(KEY+"-tab",cur)}catch(e){};renderTabs();ledLoad();renderList()};n.appendChild(lb);
 const db=document.createElement("button");db.className=cur==="__DED__"?"on":"";db.innerHTML='💸 Deductions <span class="tb">'+dn+'</span>';db.onclick=()=>{cur="__DED__";try{localStorage.setItem(KEY+"-tab",cur)}catch(e){};renderTabs();renderList()};n.appendChild(db);
 const done=EMPS().filter(e=>emp(e.c).done).length;$("#pbar").style.width=(100*done/EMPS().length)+"%";$("#ptxt").textContent=done+" / "+EMPS().length+" employees done"}
 function chipHtml(e){const s=emp(e.c);let ex="";if(ot15Tot(e)||ot2Tot(e))ex+='<span class="chip L">OT'+((ot15Tot(e)||0)+(ot2Tot(e)||0))+'h</span>';if(+s.bpA)ex+='<span class="chip '+(+s.bpA<0?"A":"S")+'">R'+(+s.bpA).toFixed(0)+'</span>';
@@ -225,7 +233,7 @@ if(e.f)h+='<div class="flag'+(e.nopay?" red":"")+'">⚑ '+e.f+'</div>';
 if(editSet.has(e.c))h+=edForm(e);
 h+='<div class="body">'+(e.fx?'<div style="font-size:12.5px;color:var(--mut);padding:6px 0">Salaried — Basic Salary line, no day entry. Use the note for exceptions only.</div>':(gridHtml(e)+((window._dp&&window._dp.c===e.c)?dpForm(e):"")))+
 '<div class="tools">extra OT1.5× <input type="number" step="0.5" min="0" data-ot15="'+e.c+'" value="'+(s.ot15||"")+'" style="width:58px" placeholder="h">h · OT2× <input type="number" step="0.5" min="0" data-ot2="'+e.c+'" value="'+(s.ot2||"")+'" style="width:58px" placeholder="h">h · Back-pay R <input type="number" step="0.01" data-bpa="'+e.c+'" value="'+(s.bpA||"")+'" style="width:84px" placeholder="±0.00"> <input type="text" data-bpw="'+e.c+'" value="'+(s.bpWhy||"").replace(/"/g,"&quot;")+'" placeholder="back-pay reason" style="flex:1;min-width:120px"></div>'+
-'<div class="tools"><input type="text" placeholder="note for Phil (sick note ref, part-day, etc.)" value="'+(s.note||"").replace(/"/g,"&quot;")+'" data-note="'+e.c+'">'+(e.fx?"":'<button class="mini" data-def="'+e.c+'">↺ defaults</button>')+'</div></div>';
+'<div class="tools"><input type="text" placeholder="note for Phil (sick note ref, part-day, etc.)" value="'+(s.note||"").replace(/"/g,"&quot;")+'" data-note="'+e.c+'"><button class="mini" data-fp="'+e.c+'">📎 Files</button>'+(e.fx?"":'<button class="mini" data-def="'+e.c+'">↺ defaults</button>')+'</div>'+((FPC===e.c)?filesPanel(e):"")+'</div>';
 card.innerHTML=h;return card}
 function gridHtml(e){let h='<div class="grid"><div class="dow">Mo</div><div class="dow">Tu</div><div class="dow">We</div><div class="dow">Th</div><div class="dow">Fr</div><div class="dow">Sa</div><div class="dow">Su</div>';
 const pad={"Mo":0,"Tu":1,"We":2,"Th":3,"Fr":4,"Sa":5,"Su":6}[DATA.days[0].w];
@@ -258,6 +266,51 @@ function renderStandby(L){
  const qi=d.querySelector("#sbq");qi.oninput=()=>{window._sbq=qi.value;const pos=qi.selectionStart;renderList();const q2=document.querySelector("#sbq");if(q2){q2.focus();q2.setSelectionRange(pos,pos)}};
 }
 function dedGet(c){if(!st._ded)st._ded={};if(!st._ded[c])st._ded[c]={};return st._ded[c]}
+function philRows(){return EMPS().map(e=>{const c=counts(e);const s=emp(e.c);const d=(st._ded||{})[e.c]||{};
+ const sx=sbX(e.c);const sd=sx?sbDays(sx):0;const sr=sx?sbRate(sx):"";const stot=sd?(sd*sr):0;
+ return {c:e.c,n:e.n,fx:e.fx,days:e.fx?"":c.W,ph:e.fx?"":c.PH,phw:e.fx?"":c.PHW,part:e.fx?"":(c.PhP||""),o15:ot15Tot(e)||"",o2:ot2Tot(e)||"",sick:e.fx?"":(c.S||""),lv:e.fx?"":(c.L||""),fn:e.fx?"":(c.F||""),sd:sd||"",sr:sd?sr:"",stot:sd?stot.toFixed(2):"",bp:s.bpA||"",bpw:s.bpWhy||"",loan:d.l||"",fuel:d.f||"",oth:d.o||"",note:[s.note||"",d.w||""].filter(Boolean).join(" · ")}})}
+function renderPhil(L){
+ const rows=philRows();const num=k=>rows.reduce((a,r)=>a+(+r[k]||0),0);
+ let h='<div class="banner">📋 <b>For Phil — Sage Pastel keying sheet.</b> One row per employee, exactly the payslip lines: no logic needed. SALARIED = Basic Salary as June (plus whatever appears in their row). Partial hrs are PAYABLE hours (min-4h rule applied). <button class="mini" id="philCopy" style="background:#0f766e;color:#fff">⧉ Copy for Phil</button> <button class="mini" onclick="window.print()">🖨 Print</button></div>';
+ h+='<div class="ptwrap"><table class="ptable"><tr><th>Code</th><th>Employee</th><th>Basis</th><th>Days</th><th>PH</th><th>PHW</th><th>Part hrs</th><th>OT1.5 h</th><th>OT2 h</th><th>Sick</th><th>Leave</th><th>Funeral</th><th>Stby d</th><th>Stby rate</th><th>Stby R</th><th>Backpay R</th><th>Backpay reason</th><th>Loan ded R</th><th>Fuel ded R</th><th>Other ded R</th><th>Note</th></tr>';
+ rows.forEach(r=>{h+='<tr><td><b>'+r.c+'</b></td><td>'+r.n+'</td><td>'+(r.fx?"SALARIED":"daily")+'</td><td>'+r.days+'</td><td>'+r.ph+'</td><td>'+r.phw+'</td><td>'+r.part+'</td><td>'+r.o15+'</td><td>'+r.o2+'</td><td>'+r.sick+'</td><td>'+r.lv+'</td><td>'+r.fn+'</td><td>'+r.sd+'</td><td>'+r.sr+'</td><td>'+r.stot+'</td><td>'+r.bp+'</td><td>'+r.bpw+'</td><td>'+r.loan+'</td><td>'+r.fuel+'</td><td>'+r.oth+'</td><td>'+r.note+'</td></tr>'});
+ h+='<tr class="tot"><td colspan="3">TOTALS</td><td>'+num("days")+'</td><td>'+num("ph")+'</td><td>'+num("phw")+'</td><td>'+num("part")+'</td><td>'+num("o15")+'</td><td>'+num("o2")+'</td><td>'+num("sick")+'</td><td>'+num("lv")+'</td><td>'+num("fn")+'</td><td>'+num("sd")+'</td><td></td><td>'+num("stot").toFixed(2)+'</td><td>'+num("bp").toFixed(2)+'</td><td></td><td>'+num("loan").toFixed(2)+'</td><td>'+num("fuel").toFixed(2)+'</td><td>'+num("oth").toFixed(2)+'</td><td></td></tr></table></div>';
+ const dv=document.createElement("div");dv.innerHTML=h;L.appendChild(dv);
+ dv.querySelector("#philCopy").onclick=()=>{const H=["Code","Employee","Basis","Days","PH","PHW","PartHrs","OT1.5h","OT2h","Sick","Leave","Funeral","StbyDays","StbyRate","StbyR","BackpayR","BackpayReason","LoanDedR","FuelDedR","OtherDedR","Note"];
+  const tsv=[H.join("\t")].concat(philRows().map(r=>[r.c,r.n,(r.fx?"SALARIED":"daily"),r.days,r.ph,r.phw,r.part,r.o15,r.o2,r.sick,r.lv,r.fn,r.sd,r.sr,r.stot,r.bp,r.bpw,r.loan,r.fuel,r.oth,r.note].join("\t"))).join("\n");
+  navigator.clipboard.writeText(tsv).then(()=>alert("Keying sheet copied — paste into Excel / email for Phil"))};}
+let LED=null;
+function ledLoad(){if(!FB||!fbUser)return;FB.collection("ledger").doc("all").get().then(d=>{LED=d.exists?(d.data().entries||[]):[];renderList()}).catch(e=>{ffile("ledger load failed: "+e.code,false)})}
+function ledSave(){if(!FB||!fbUser)return;FB.collection("ledger").doc("all").set({entries:LED,_ts:Date.now(),by:fbUser.email}).then(()=>ffile("ledger ✓ saved",true)).catch(e=>ffile("ledger save FAILED: "+e.code,false))}
+function renderLedger(L){
+ let h='<div class="banner">📒 <b>Loans & Fuel ledger — runs across months.</b> Every advance and deduction with its date. Loan balance = advances − deductions. Seeded from the cockpit Loan Register. This ledger + the run sheet are what Phil gets for loan specifics.'+(LED===null?' <b>Loading…</b>':'')+'</div>';
+ if(LED!==null){
+  if(!LED.length)h+='<div class="frow"><button class="mini" data-ledseed="1" style="background:#0f766e;color:#fff">Seed: A011 loan R2,000 advanced 2026-07 + R438.20 deduction Aug</button></div>';
+  h+='<div class="frow" style="flex-wrap:wrap"><b>＋ Add:</b> <input type="date" id="ld_d" style="font-size:12px"> <input id="ld_c" placeholder="CODE" style="width:70px;text-transform:uppercase"> <select id="ld_t"><option value="loan-advance">Loan advance</option><option value="loan-deduct">Loan deduction</option><option value="fuel-deduct">Fuel deduction</option><option value="other">Other</option></select> R <input type="number" id="ld_a" step="0.01" style="width:90px"> <input id="ld_n" placeholder="note / reference" style="flex:1;min-width:140px"> <button class="mini" data-ledadd="1" style="background:#0f766e;color:#fff">Add</button></div>';
+  const bal={};LED.forEach(x=>{if(!bal[x.c])bal[x.c]={adv:0,ded:0,fuel:0};if(x.t==="loan-advance")bal[x.c].adv+=+x.a;if(x.t==="loan-deduct")bal[x.c].ded+=+x.a;if(x.t==="fuel-deduct")bal[x.c].fuel+=+x.a});
+  h+='<div class="sbg">Balances</div>';
+  Object.keys(bal).sort().forEach(c=>{const b=bal[c];h+='<div class="frow"><span class="code">'+c+'</span><span class="name">'+liveName(c,c)+'</span><span>Loan advanced R'+b.adv.toFixed(2)+' · repaid R'+b.ded.toFixed(2)+' · <b>balance R'+(b.adv-b.ded).toFixed(2)+'</b></span><span style="margin-left:auto">Fuel deducted R'+b.fuel.toFixed(2)+'</span></div>'});
+  h+='<div class="sbg">Entries</div>';
+  LED.slice().sort((a,b)=>(b.d||"").localeCompare(a.d||"")).forEach((x,i)=>{h+='<div class="frow"><span style="width:84px">'+(x.d||"?")+'</span><span class="code">'+x.c+'</span><span style="width:110px">'+x.t+'</span><b style="width:90px;text-align:right">R '+(+x.a).toFixed(2)+'</b><span style="flex:1;color:var(--mut)">'+(x.n||"")+'</span></div>'});
+ }
+ const dv=document.createElement("div");dv.innerHTML=h;L.appendChild(dv);}
+let FPC=null,FPL=null;
+function filesOpen(code){FPC=code;FPL=null;renderList();if(!FB||!fbUser)return;
+ FB.collection("files").where("run","==",RUNID).where("code","==",code).get().then(q=>{FPL=[];q.forEach(d=>FPL.push(Object.assign({id:d.id},d.data(),{data:null,ref:d})));renderList()}).catch(e=>{FPL=[];ffile("files load failed: "+e.code,false);renderList()})}
+function fileView(id){FB.collection("files").doc(id).get().then(d=>{const f=d.data();const bin=atob(f.data);const u8=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u8[i]=bin.charCodeAt(i);const url=URL.createObjectURL(new Blob([u8],{type:f.mime}));window.open(url,"_blank")})}
+function fileUpload(code,kind,file){const e=EMPS().find(x=>x.c===code);const label=code+"_"+(e?e.n.replace(/\s+/g,"-"):"")+"_"+kind;
+ const fin=(mime,b64)=>{FB.collection("files").add({run:RUNID,code:code,kind:kind,name:label+"_"+file.name,mime:mime,data:b64,by:fbUser.email,at:new Date().toISOString()})
+  .then(()=>{logEdit(code,"FILE-ATTACH",kind,file.name,"attached via app");save();filesOpen(code)}).catch(err=>alert("Upload failed: "+err.code+" (file too big? keep under ~700KB)"))};
+ if(file.type.startsWith("image/")){const img=new Image();img.onload=()=>{const mx=1400;let w=img.width,h2=img.height;if(Math.max(w,h2)>mx){const k=mx/Math.max(w,h2);w=Math.round(w*k);h2=Math.round(h2*k)}
+   const cv=document.createElement("canvas");cv.width=w;cv.height=h2;cv.getContext("2d").drawImage(img,0,0,w,h2);
+   const du=cv.toDataURL("image/jpeg",0.72);fin("image/jpeg",du.split(",")[1])};img.src=URL.createObjectURL(file)}
+ else{if(file.size>700000){alert("PDF too big ("+Math.round(file.size/1024)+"KB) — keep under 700KB or photograph the page instead");return}
+  const r=new FileReader();r.onload=()=>fin(file.type||"application/pdf",String(r.result).split(",")[1]);r.readAsDataURL(file)}}
+function filesPanel(e){let h='<div style="background:#fefce8;border:1px solid #facc15;border-radius:8px;padding:10px;margin-top:8px;font-size:12.5px" data-fpp="1"><b>📎 Files — '+e.c+'</b> (sick notes, signed loan forms; auto-labelled '+e.c+'_Name per filing rule)<br>';
+ h+='<div style="display:flex;gap:8px;align-items:center;margin:6px 0"><select id="fp_kind"><option value="sick-note">Sick note</option><option value="loan-doc">Loan document</option><option value="other">Other</option></select><input type="file" id="fp_file" accept="image/*,.pdf" capture="environment"><button class="mini" data-fpclose="1">Close</button></div>';
+ if(FPL===null)h+='<i>loading…</i>';else if(!FPL.length)h+='<i>no files yet</i>';
+ else FPL.forEach(f=>{h+='<div class="frow"><span>'+(f.kind||"")+'</span><a href="#" data-fview="'+f.id+'">'+f.name+'</a><span style="margin-left:auto;color:var(--mut)">'+(f.at||"").slice(0,10)+'</span></div>'});
+ return h+"</div>"}
 function renderDeductions(L){
  let h='<div class="banner">💸 <b>Deductions — August run.</b> Loan register: only OPEN loan is <b>A011 R2,000</b> (deduct <b>R438.20</b> this run — 10%-of-gross cap, Staff Loans 8171). E419 CLOSED. Fuel/other: from your records. Everything flows to CSV + write-back, audit-logged. <button class="mini" data-dla011="1" style="background:#0f766e;color:#fff">Load A011 R438.20</button></div>';
  const q=(window._dq||"").toLowerCase();
@@ -282,6 +335,8 @@ function renderList(){const L=$("#list");L.innerHTML="";
   if(rosterMissing&&fbUser){L.innerHTML='<div class="banner"><b>First run — seed the roster.</b> Paste the contents of <code>ROSTER-SEED_paste-once.json</code> (from the cockpit folder — NEVER commit it to GitHub):<br><textarea id="seedT" style="width:100%;height:120px;margin:8px 0"></textarea><button class="mini" id="seedB" style="background:#0f766e;color:#fff">Seed roster</button></div>';
    const b=L.querySelector("#seedB");b.onclick=()=>seedRoster(L.querySelector("#seedT").value);return}
   L.innerHTML='<div class="banner">🔑 '+(window.__FBCONFIG&&window.__FBCONFIG.apiKey?(fbUser?"Loading roster…":"Sign in with Google (top right) to load the roster and entries."):"Waiting for config.js — see _SETUP-FOR-BYRON.md.")+'</div>';return}
+ if(cur==="__PHIL__"){renderPhil(L);return}
+ if(cur==="__LED__"){renderLedger(L);return}
  if(cur==="__DED__"){renderDeductions(L);return}
  if(cur==="__SB__"){renderStandby(L);return}EMPS().filter(e=>e.t===cur).forEach(e=>L.appendChild(renderCard(e)));
  const d=document.createElement("div");d.innerHTML=editSet.has("__new__")?edForm(null):'<button class="mini" data-eadd="1" style="margin:6px 0 14px">＋ Add employee to '+cur+'</button>';L.appendChild(d)}
@@ -300,6 +355,7 @@ document.addEventListener("click",ev=>{
 document.addEventListener("contextmenu",ev=>{const c=ev.target.closest(".cell:not(.empty)");if(!c)return;ev.preventDefault();
  const e=EMPS().find(x=>x.c===c.dataset.emp);if(!e||e.fx)return;window._dp={c:e.c,iso:c.dataset.day};openSet.add(e.c);renderList()});
 document.addEventListener("change",ev=>{const t=ev.target;
+ if(t.id==="fp_file"){const f=t.files[0];if(!f)return;const kind=document.getElementById("fp_kind").value;fileUpload(FPC,kind,f);return}
  if(t.dataset.dl!==undefined){dedGet(t.dataset.dl).l=t.value;save();renderList();return}
  if(t.dataset.df!==undefined){dedGet(t.dataset.df).f=t.value;save();renderList();return}
  if(t.dataset.do!==undefined){dedGet(t.dataset.do).o=t.value;save();renderList();return}
@@ -320,6 +376,13 @@ document.addEventListener("click",ev=>{
  const eb=ev.target.closest("[data-edit]");if(eb){const c=eb.dataset.edit;editSet.has(c)?editSet.delete(c):editSet.add(c);openSet.add(c);renderList();return}
  if(ev.target.closest("[data-eadd]")){editSet.add("__new__");renderList();return}
  if(ev.target.closest("[data-dall]")){window._dall=!window._dall;renderList();return}
+ const fpb=ev.target.closest("[data-fp]");if(fpb){filesOpen(fpb.dataset.fp);return}
+ if(ev.target.closest("[data-fpclose]")){FPC=null;FPL=null;renderList();return}
+ const fv=ev.target.closest("[data-fview]");if(fv){ev.preventDefault();fileView(fv.dataset.fview);return}
+ if(ev.target.closest("[data-ledseed]")){LED=[{d:"2026-07-25",c:"A011",t:"loan-advance",a:2000,n:"Staff loan granted Jul 2026 (loan register)",by:fbUser.email,at:new Date().toISOString()},{d:"2026-08-27",c:"A011",t:"loan-deduct",a:438.20,n:"1st repayment — Aug run (10% cap, Staff Loans 8171)",by:fbUser.email,at:new Date().toISOString()}];ledSave();renderList();return}
+ if(ev.target.closest("[data-ledadd]")){const g=id=>document.getElementById(id);const c=(g("ld_c").value||"").trim().toUpperCase();const a=parseFloat(g("ld_a").value);
+  if(!c||isNaN(a)){alert("Code and amount required");return}
+  LED.push({d:g("ld_d").value||new Date().toISOString().slice(0,10),c:c,t:g("ld_t").value,a:a,n:g("ld_n").value||"",by:fbUser.email,at:new Date().toISOString()});ledSave();renderList();return}
  if(ev.target.closest("[data-dla011]")){const d=dedGet("A011");if(d.l){alert("A011 already has a loan deduction")}else{d.l=438.20;d.w=((d.w||"")+" staff loan repay of R2,000 (10% cap)").trim();logEdit("A011","LOAN-DEDUCT","0","438.20","loan register: R2,000 granted Jul, first repayment Aug");save();renderTabs();renderList()}return}
  if(ev.target.closest("[data-sbjuly]")){let n=0;DATA.standby.forEach(x=>{const s=sbGet(x.c);if((s.d===undefined||s.d==="")&&x.julyDays>0){s.d=x.julyDays;n++}});logEdit("STANDBY","PREFILL","blanks","July days copied to "+n+" people","Byron prefill — adjust changes by hand");save();renderTabs();renderList();alert("Prefilled "+n+" people from July. Adjust the changed ones, zero the fallen-away.");return}
  if(ev.target.closest("[data-sbadd]")){const c=(prompt("Employee CODE to add to standby (must be on the run):")||"").trim().toUpperCase();if(!c)return;
