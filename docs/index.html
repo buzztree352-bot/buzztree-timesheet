@@ -56,7 +56,7 @@ body.unlocked .cell.lk{cursor:pointer;opacity:1;outline:1px dashed #d97706}
 .empty{visibility:hidden}
 .W{background:var(--wbg);color:#14532d}.A{background:var(--abg);color:#7f1d1d}.S{background:var(--sbg);color:#78350f}
 .L{background:var(--lbg);color:#1e3a8a}.R{background:var(--rbg);color:#334155}.PH{background:var(--phbg);color:#4c1d95}
-.PHW{background:#7c3aed;color:#fff}.P{background:#ccfbf1;color:#134e4a;border-color:#2dd4bf!important}.PW,.SUN,.NW{background:var(--offbg);color:var(--off)}
+.PHW{background:#7c3aed;color:#fff}.P{background:#ccfbf1;color:#134e4a;border-color:#2dd4bf!important}.F{background:#e0e7ff;color:#312e81}.PW,.SUN,.NW{background:var(--offbg);color:var(--off)}
 .tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px;font-size:12.5px}
 .tools input[type=number]{width:60px;padding:4px;border:1px solid var(--line);border-radius:5px}
 .tools input[type=text]{flex:1;min-width:180px;padding:5px 8px;border:1px solid var(--line);border-radius:5px}
@@ -99,7 +99,7 @@ footer{position:fixed;bottom:0;left:0;right:0;background:#0f2537;color:#9fb6c6;f
   <div class="banner">⚠ <b>Run-wide carried items:</b> June standby back-pay <b>R28,583.92</b> prepayment (load per “Standby corrections” tab when cash flow allows) · D319 recover <b>R1,269.66</b> · E420 refund <b>R300</b> · A011 new loan deduct <b>R438.20</b> (10% cap). OT hours &amp; back-pay now entered per card. <button class="mini" id="loadBP" style="background:#0f766e;color:#fff">▶ Load open corrections</button> <span style="color:var(--mut)">(E420 +300 · D319 −1,269.66 only. June standby back-pay FULLY SETTLED on the July run — Byron 26-Aug; F515 top-up R868.33 covered the one July shortfall, paid 23 Jul. All other back-pay: Byron enters manually per card)</span></div>
   <div class="leg">
     <span class="W">W worked</span><span class="A">A absent (no pay)</span><span class="S">S sick</span><span class="L">L leave</span>
-    <span class="R">R rain (no pay)</span><span class="PH">PH pub. holiday (paid)</span><span class="PHW">PHW holiday WORKED</span><span class="P" style="padding:2px 8px;border-radius:4px;font-weight:700">P partial hrs (min 4h)</span><span class="PW">off / payweekend</span>
+    <span class="R">R rain (no pay)</span><span class="PH">PH pub. holiday (paid)</span><span class="PHW">PHW holiday WORKED</span><span class="P" style="padding:2px 8px;border-radius:4px;font-weight:700">P partial hrs (min 4h)</span><span class="F">F funeral (paid)</span><span class="PW">off / payweekend</span>
   </div>
   <div style="font-size:12px;color:var(--mut)">Tap a day to cycle W → A → S → L. Tap 10 Aug to toggle PH ↔ PHW. Grey days are fixed — tick “unlock fixed days” to override. Everything autosaves in this browser; export CSV when a team is done.</div>
   <div id="list"></div>
@@ -177,13 +177,14 @@ function ot2Tot(e){return(+emp(e.c).ot2||0)+otSum(e,"o2")}
 function dpForm(e){const d=DATA.days.find(x=>x.d===window._dp.iso);const s=emp(e.c);const gv=m=>((s[m]||{})[d.d]??"");
  return '<div style="background:#f0fdfa;border:1px solid #2dd4bf;border-radius:8px;padding:10px;margin-top:8px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;font-size:12.5px" data-dpf="1">'
  +'<b>'+d.w+' '+d.lbl+' · '+e.c+'</b>'
+ +'<label>Status <select data-dp="st"><option value="">(keep)</option><option value="__def">default</option><option>W</option><option>A</option><option>S</option><option>L</option><option value="F">F funeral (paid)</option></select></label>'
  +'<label>Worked hrs <input type="number" step="0.25" min="0" max="12" data-dp="h" value="'+gv("h")+'" style="width:64px" placeholder="full"> <small>(&lt;4h pays 4h)</small></label>'
  +'<label>OT1.5× <input type="number" step="0.25" min="0" data-dp="o15" value="'+gv("o15")+'" style="width:60px">h</label>'
  +'<label>OT2× <input type="number" step="0.25" min="0" data-dp="o2" value="'+gv("o2")+'" style="width:60px">h</label>'
  +'<button class="mini" style="background:#0f766e;color:#fff" data-dpsave="'+e.c+'">Save</button>'
  +'<button class="mini" data-dpclearday="'+e.c+'">Clear day</button>'
  +'<button class="mini" data-dpcancel="1">Close</button></div>'}
-function counts(e){const r={W:0,A:0,S:0,L:0,R:0,PH:0,PHW:0,PhA:0,PhP:0};DATA.days.forEach(d=>{const ph=pHrs(e,d);
+function counts(e){const r={W:0,A:0,S:0,L:0,F:0,R:0,PH:0,PHW:0,PhA:0,PhP:0};DATA.days.forEach(d=>{const ph=pHrs(e,d);
  if(ph!==null){const pay=payHrs(ph);if(pay>=7){r.W++}else{r.PhA+=ph;r.PhP+=pay}return}
  const v=dayVal(e,d);if(r[v]!==undefined)r[v]++});return r}
 let undoStack=[],redoStack=[],lastSnap=null;
@@ -197,10 +198,12 @@ function teamProg(t){const es=EMPS().filter(e=>e.t===t);return[es.filter(e=>emp(
 function renderTabs(){const n=$("#tabs");n.innerHTML="";teamList().forEach(t=>{const[d,tot]=teamProg(t);const b=document.createElement("button");b.className=t===cur?"on":"";b.innerHTML=t+' <span class="tb">'+d+"/"+tot+"</span>";b.onclick=()=>{cur=t;try{localStorage.setItem(KEY+"-tab",t)}catch(e){};renderTabs();renderList()};n.appendChild(b)});
 const sbn=Object.values(st._sb||{}).filter(x=>+x.d>0).length;
 const sb=document.createElement("button");sb.className=cur==="__SB__"?"on":"";sb.innerHTML='⚡ Standby <span class="tb">'+sbn+"/"+DATA.standby.length+"</span>";sb.onclick=()=>{cur="__SB__";try{localStorage.setItem(KEY+"-tab",cur)}catch(e){};renderTabs();renderList()};n.appendChild(sb);
+const dn=Object.values(st._ded||{}).filter(x=>(+x.l||+x.f||+x.o)).length;
+const db=document.createElement("button");db.className=cur==="__DED__"?"on":"";db.innerHTML='💸 Deductions <span class="tb">'+dn+'</span>';db.onclick=()=>{cur="__DED__";try{localStorage.setItem(KEY+"-tab",cur)}catch(e){};renderTabs();renderList()};n.appendChild(db);
 const done=EMPS().filter(e=>emp(e.c).done).length;$("#pbar").style.width=(100*done/EMPS().length)+"%";$("#ptxt").textContent=done+" / "+EMPS().length+" employees done"}
 function chipHtml(e){const s=emp(e.c);let ex="";if(ot15Tot(e)||ot2Tot(e))ex+='<span class="chip L">OT'+((ot15Tot(e)||0)+(ot2Tot(e)||0))+'h</span>';if(+s.bpA)ex+='<span class="chip '+(+s.bpA<0?"A":"S")+'">R'+(+s.bpA).toFixed(0)+'</span>';
 if(e.fx)return ex+'<span class="fx">FIXED — salaried</span>';const c=counts(e);let h=ex+'<span class="chip W">'+c.W+'d</span>'+(c.PhP?'<span class="chip L" title="partial days — payable hrs (min-4h rule)">+'+c.PhP+'h</span>':'')+'<span class="chip PH">PH '+(c.PH||c.PHW)+(c.PHW?"·worked":"")+'</span>';
-if(c.S)h+='<span class="chip S">S'+c.S+'</span>';if(c.L)h+='<span class="chip L">L'+c.L+'</span>';if(c.A)h+='<span class="chip A">A'+c.A+'</span>';return h}
+if(c.S)h+='<span class="chip S">S'+c.S+'</span>';if(c.L)h+='<span class="chip L">L'+c.L+'</span>';if(c.F)h+='<span class="chip L" style="background:#e0e7ff;color:#312e81">F'+c.F+'</span>';if(c.A)h+='<span class="chip A">A'+c.A+'</span>';return h}
 function matchIcon(e){const s=emp(e.c);if(e.fx||s.tally==="")return"";return(+s.tally===counts(e).W)?"✅":"❌"}
 function edForm(e){const isNew=!e;const teams=[...new Set(DATA.emps.map(x=>x.t))];
  return '<div class="edp" data-eform="'+(isNew?"__new__":e.c)+'" onclick="event.stopPropagation()" style="background:#f0f9ff;border:1px solid #7dd3fc;border-radius:8px;padding:10px;margin:8px 12px;display:grid;gap:6px;font-size:12.5px">'
@@ -249,16 +252,37 @@ function renderStandby(L){
    h+='<div class="sbrow"><span class="code">'+x.c+'</span><span class="name">'+liveName(x.c,x.n)+(missing?' <b style="color:var(--a)">⚠ not on run</b>':"")+'</span><span class="sbref">Jul: '+(x.julyDays||0)+'d</span>'
     +'R <input type="number" step="0.0001" data-sbr="'+x.c+'" value="'+r+'" title="rate/day"> × <input type="number" min="0" max="35" data-sbd="'+x.c+'" value="'+(d||"")+'" placeholder="days"><span class="tot">'+(d?("R "+tot.toFixed(2)):"—")+'</span></div>'});
  });
- h+='<div style="margin:10px 0"><button class="mini" data-sbadd="1">＋ Add person to standby</button></div>';
+ h+='<div style="margin:10px 0"><button class="mini" data-sbadd="1">＋ Add person to standby</button> <button class="mini" data-sbjuly="1" style="background:#4338ca;color:#fff">⟳ Prefill July days (only blanks)</button></div>';
  h+='<div class="sbtotal"><span>'+gn+' people</span><span>'+gd+' standby days</span><span style="margin-left:auto">TOTAL R '+gt.toFixed(2)+'</span></div>';
  const d=document.createElement("div");d.innerHTML=h;L.appendChild(d);
  const qi=d.querySelector("#sbq");qi.oninput=()=>{window._sbq=qi.value;const pos=qi.selectionStart;renderList();const q2=document.querySelector("#sbq");if(q2){q2.focus();q2.setSelectionRange(pos,pos)}};
+}
+function dedGet(c){if(!st._ded)st._ded={};if(!st._ded[c])st._ded[c]={};return st._ded[c]}
+function renderDeductions(L){
+ let h='<div class="banner">💸 <b>Deductions — August run.</b> Loan register: only OPEN loan is <b>A011 R2,000</b> (deduct <b>R438.20</b> this run — 10%-of-gross cap, Staff Loans 8171). E419 CLOSED. Fuel/other: from your records. Everything flows to CSV + write-back, audit-logged. <button class="mini" data-dla011="1" style="background:#0f766e;color:#fff">Load A011 R438.20</button></div>';
+ const q=(window._dq||"").toLowerCase();
+ h+='<input type="text" id="dq" placeholder="filter name / code…" value="'+(window._dq||"")+'" style="padding:6px 10px;border:1px solid var(--line);border-radius:6px;width:min(280px,100%);margin:4px 0">';
+ let tl=0,tf=0,to=0;
+ EMPS().forEach(e=>{const d=(st._ded||{})[e.c]||{};const any=(+d.l||+d.f||+d.o);
+  tl+=(+d.l||0);tf+=(+d.f||0);to+=(+d.o||0);
+  if(q&&!(e.c.toLowerCase().includes(q)||e.n.toLowerCase().includes(q)))return;
+  if(!q&&!any&&!window._dall)return;
+  h+='<div class="sbrow"><span class="code">'+e.c+'</span><span class="name">'+e.n+'</span>'
+   +'Loan R <input type="number" step="0.01" min="0" data-dl="'+e.c+'" value="'+(d.l||"")+'">'
+   +' Fuel R <input type="number" step="0.01" min="0" data-df="'+e.c+'" value="'+(d.f||"")+'">'
+   +' Other R <input type="number" step="0.01" min="0" data-do="'+e.c+'" value="'+(d.o||"")+'">'
+   +' <input type="text" data-dw="'+e.c+'" value="'+(d.w||"").replace(/"/g,"&quot;")+'" placeholder="reason" style="flex:1;min-width:110px"></div>'});
+ h+='<div style="margin:8px 0"><button class="mini" data-dall="1">'+(window._dall?"Show only entered":"Show ALL employees")+'</button></div>';
+ h+='<div class="sbtotal"><span>Loans R '+tl.toFixed(2)+'</span><span>Fuel R '+tf.toFixed(2)+'</span><span>Other R '+to.toFixed(2)+'</span><span style="margin-left:auto">TOTAL R '+(tl+tf+to).toFixed(2)+'</span></div>';
+ const dv=document.createElement("div");dv.innerHTML=h;L.appendChild(dv);
+ const qi=dv.querySelector("#dq");qi.oninput=()=>{window._dq=qi.value;const p=qi.selectionStart;renderList();const q2=document.querySelector("#dq");if(q2){q2.focus();q2.setSelectionRange(p,p)}};
 }
 function renderList(){const L=$("#list");L.innerHTML="";
  if(!rosterLoaded){
   if(rosterMissing&&fbUser){L.innerHTML='<div class="banner"><b>First run — seed the roster.</b> Paste the contents of <code>ROSTER-SEED_paste-once.json</code> (from the cockpit folder — NEVER commit it to GitHub):<br><textarea id="seedT" style="width:100%;height:120px;margin:8px 0"></textarea><button class="mini" id="seedB" style="background:#0f766e;color:#fff">Seed roster</button></div>';
    const b=L.querySelector("#seedB");b.onclick=()=>seedRoster(L.querySelector("#seedT").value);return}
   L.innerHTML='<div class="banner">🔑 '+(window.__FBCONFIG&&window.__FBCONFIG.apiKey?(fbUser?"Loading roster…":"Sign in with Google (top right) to load the roster and entries."):"Waiting for config.js — see _SETUP-FOR-BYRON.md.")+'</div>';return}
+ if(cur==="__DED__"){renderDeductions(L);return}
  if(cur==="__SB__"){renderStandby(L);return}EMPS().filter(e=>e.t===cur).forEach(e=>L.appendChild(renderCard(e)));
  const d=document.createElement("div");d.innerHTML=editSet.has("__new__")?edForm(null):'<button class="mini" data-eadd="1" style="margin:6px 0 14px">＋ Add employee to '+cur+'</button>';L.appendChild(d)}
 document.addEventListener("click",ev=>{
@@ -276,6 +300,10 @@ document.addEventListener("click",ev=>{
 document.addEventListener("contextmenu",ev=>{const c=ev.target.closest(".cell:not(.empty)");if(!c)return;ev.preventDefault();
  const e=EMPS().find(x=>x.c===c.dataset.emp);if(!e||e.fx)return;window._dp={c:e.c,iso:c.dataset.day};openSet.add(e.c);renderList()});
 document.addEventListener("change",ev=>{const t=ev.target;
+ if(t.dataset.dl!==undefined){dedGet(t.dataset.dl).l=t.value;save();renderList();return}
+ if(t.dataset.df!==undefined){dedGet(t.dataset.df).f=t.value;save();renderList();return}
+ if(t.dataset.do!==undefined){dedGet(t.dataset.do).o=t.value;save();renderList();return}
+ if(t.dataset.dw!==undefined){dedGet(t.dataset.dw).w=t.value;save();return}
  if(t.dataset.sbd!==undefined){sbGet(t.dataset.sbd).d=t.value;save();renderTabs();renderList();return}
  if(t.dataset.sbr!==undefined){sbGet(t.dataset.sbr).r=t.value;save();renderList();return}
  if(t.dataset.done!==undefined){emp(t.dataset.done).done=t.checked;save();renderList();renderTabs()}
@@ -291,6 +319,9 @@ document.addEventListener("click",ev=>{const b=ev.target.closest("[data-def]");i
 document.addEventListener("click",ev=>{
  const eb=ev.target.closest("[data-edit]");if(eb){const c=eb.dataset.edit;editSet.has(c)?editSet.delete(c):editSet.add(c);openSet.add(c);renderList();return}
  if(ev.target.closest("[data-eadd]")){editSet.add("__new__");renderList();return}
+ if(ev.target.closest("[data-dall]")){window._dall=!window._dall;renderList();return}
+ if(ev.target.closest("[data-dla011]")){const d=dedGet("A011");if(d.l){alert("A011 already has a loan deduction")}else{d.l=438.20;d.w=((d.w||"")+" staff loan repay of R2,000 (10% cap)").trim();logEdit("A011","LOAN-DEDUCT","0","438.20","loan register: R2,000 granted Jul, first repayment Aug");save();renderTabs();renderList()}return}
+ if(ev.target.closest("[data-sbjuly]")){let n=0;DATA.standby.forEach(x=>{const s=sbGet(x.c);if((s.d===undefined||s.d==="")&&x.julyDays>0){s.d=x.julyDays;n++}});logEdit("STANDBY","PREFILL","blanks","July days copied to "+n+" people","Byron prefill — adjust changes by hand");save();renderTabs();renderList();alert("Prefilled "+n+" people from July. Adjust the changed ones, zero the fallen-away.");return}
  if(ev.target.closest("[data-sbadd]")){const c=(prompt("Employee CODE to add to standby (must be on the run):")||"").trim().toUpperCase();if(!c)return;
    if(!EMPS().some(e=>e.c===c)){alert(c+" is not on the August run");return}
    if(sbList().some(x=>x.c===c)){alert(c+" already on the standby list");return}
@@ -301,6 +332,7 @@ document.addEventListener("click",ev=>{
  const dps=ev.target.closest("[data-dpsave]");if(dps){const code=dps.dataset.dpsave;const s=emp(code);const iso=window._dp.iso;const f=document.querySelector('[data-dpf]');const g=k=>f.querySelector('[data-dp="'+k+'"]').value.trim();
    let bad=false;["h","o15","o2"].forEach(k=>{const v=g(k);if(v!==""&&(isNaN(+v)||+v<0||+v>12))bad=true});if(bad){alert("Hours must be 0–12");return}
    ["h","o15","o2"].forEach(k=>{const v=g(k);if(!s[k])s[k]={};if(v===""){delete s[k][iso]}else{s[k][iso]=+v}});
+   const stv=g("st");if(stv==="__def"){delete s.d[iso]}else if(stv){s.d[iso]=stv}
    const dd=DATA.days.find(x=>x.d===iso);logEdit(code,"DAY-EXTRAS",dd.lbl,"worked="+(g("h")||"full")+"h OT1.5="+(g("o15")||0)+"h OT2="+(g("o2")||0)+"h","right-click day entry (min-4h rule applies)");
    window._dp=null;save();renderTabs();renderList();return}
  const sb=ev.target.closest("[data-esave]");if(sb){
@@ -330,12 +362,12 @@ document.addEventListener("click",ev=>{
 });
 function rows(){return EMPS().map(e=>{const c=counts(e);const s=emp(e.c);
  const ds=DATA.days.map(d=>{const ph=pHrs(e,d);const s3=emp(e.c);const o=((s3.o15||{})[d.d]?("+OT1.5:"+s3.o15[d.d]+"h"):"")+((s3.o2||{})[d.d]?("+OT2:"+s3.o2[d.d]+"h"):"");return d.lbl.replace(" ","")+"="+(ph!==null?("P"+ph+"h>"+payHrs(ph)+"h"):dayVal(e,d))+o}).join(";");
- return[e.t,e.c,e.n,e.fx?"FIXED":"DAILY",(e.added?"ADDED":(e.ed&&Object.keys(e.ed).length?"EDITED":"")),(e.ed&&e.ed.why)||"",s.tally||"",e.fx?"":c.W,e.fx?"":c.PH,e.fx?"":c.PHW,e.fx?"":c.S,e.fx?"":c.L,e.fx?"":c.A,e.fx?"":c.R,e.fx?"":(c.PhA||""),e.fx?"":(c.PhP||""),(ot15Tot(e)||""),(ot2Tot(e)||""),(s.bpA||""),(s.bpWhy||""),(s.note||""),s.done?"YES":"",sbD(e.c),sbR2(e.c),sbT(e.c),e.fx?"":ds]})}
+ return[e.t,e.c,e.n,e.fx?"FIXED":"DAILY",(e.added?"ADDED":(e.ed&&Object.keys(e.ed).length?"EDITED":"")),(e.ed&&e.ed.why)||"",s.tally||"",e.fx?"":c.W,e.fx?"":c.PH,e.fx?"":c.PHW,e.fx?"":c.S,e.fx?"":c.L,e.fx?"":(c.F||""),e.fx?"":c.A,e.fx?"":c.R,e.fx?"":(c.PhA||""),e.fx?"":(c.PhP||""),(ot15Tot(e)||""),(ot2Tot(e)||""),(s.bpA||""),(s.bpWhy||""),(((st._ded||{})[e.c]||{}).l||""),(((st._ded||{})[e.c]||{}).f||""),(((st._ded||{})[e.c]||{}).o||""),(((st._ded||{})[e.c]||{}).w||""),(s.note||""),s.done?"YES":"",sbD(e.c),sbR2(e.c),sbT(e.c),e.fx?"":ds]})}
 function sbX(c){return sbList().find(y=>y.c===c)}
 function sbD(c){const x=sbX(c);if(!x)return"";return sbDays(x)||""}
 function sbR2(c){const x=sbX(c);return x?sbRate(x):""}
 function sbT(c){const x=sbX(c);if(!x)return"";const d=sbDays(x);return d?(d*sbRate(x)).toFixed(2):""}
-const HDR=["Team","Code","Name","Type","Edited","EditReason","PaperTally","DAYS_Worked","PH","PHW","Sick","Leave","AbsentNoPay","RainNoPay","PartialHrsActual","PartialHrsPayable","OT15h","OT2h","BackpayR","BackpayReason","Note","Done","StandbyDays","StandbyRate","StandbyTotal","DayDetail"];
+const HDR=["Team","Code","Name","Type","Edited","EditReason","PaperTally","DAYS_Worked","PH","PHW","Sick","Leave","FuneralPaid","AbsentNoPay","RainNoPay","PartialHrsActual","PartialHrsPayable","OT15h","OT2h","BackpayR","BackpayReason","LoanDeductR","FuelDeductR","OtherDeductR","DeductReason","Note","Done","StandbyDays","StandbyRate","StandbyTotal","DayDetail"];
 $("#exCsv").onclick=()=>{const csv=[HDR,...rows()].map(r=>r.map(x=>'"'+String(x).replace(/"/g,'""')+'"').join(",")).join("\r\n");
  const a=document.createElement("a");a.href=URL.createObjectURL(new Blob(["﻿"+csv],{type:"text/csv"}));a.download="August_2026_Timesheet_Entry_EXPORT_"+new Date().toISOString().slice(0,10)+".csv";a.click()};
 $("#exCopy").onclick=()=>{const t=[HDR.slice(0,14),...rows().map(r=>r.slice(0,14))].map(r=>r.join("\t")).join("\n");navigator.clipboard.writeText(t).then(()=>alert("Summary copied — paste into Excel/chat"))};
