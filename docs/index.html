@@ -104,6 +104,8 @@ footer{position:fixed;bottom:0;left:0;right:0;background:#0f2537;color:#9fb6c6;f
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
 <script src="config.js"></script>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0f2537">
 </head>
 <body>
 <header>
@@ -573,6 +575,20 @@ document.getElementById("linkF").onclick=linkFile;
 if(window.showSaveFilePicker){reconnect()}else{ffile("this browser can't autosave to file — use Copy backup",false)}
 lastSnap=JSON.stringify(st);snapUI();cloudInit();
 renderTabs();renderList();
+// ---- Companion-style offline-first (PWA): app shell cached, cold-start works in a dead zone ----
+const APP_VERSION="aug2026-v14";
+if("serviceWorker" in navigator&&location.protocol==="https:"){
+ navigator.serviceWorker.register("sw.js").then(reg=>{
+  reg.addEventListener("updatefound",()=>{const w=reg.installing;if(!w)return;
+   w.addEventListener("statechange",()=>{if(w.state==="installed"&&navigator.serviceWorker.controller){
+    const n=document.createElement("div");n.className="banner noprint";n.style.cssText="position:fixed;bottom:44px;left:12px;right:12px;z-index:99;text-align:center;box-shadow:0 4px 14px rgba(0,0,0,.25)";
+    n.innerHTML='\u2b06 <b>App update ready</b> \u2014 <button class="mini" onclick="location.reload()">Reload now</button>';
+    document.body.appendChild(n)}})});
+ }).catch(()=>{});
+}
+window.addEventListener("offline",()=>ffile("OFFLINE \u2014 working from this device; signatures & edits queue and sync when signal returns \u2713",true));
+window.addEventListener("online",()=>ffile("back online \u2014 syncing \u2713",true));
+if(!navigator.onLine)ffile("OFFLINE \u2014 working from this device; entries queue and sync when signal returns \u2713",true);
 </script>
 </body>
 </html>
