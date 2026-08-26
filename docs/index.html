@@ -118,7 +118,7 @@ footer{position:fixed;bottom:0;left:0;right:0;background:#0f2537;color:#9fb6c6;f
 </header>
 <nav id="tabs"></nav>
 <main>
-  <div class="banner">⚠ <b>Run-wide carried items:</b> June standby back-pay <b>R28,583.92</b> prepayment (load per “Standby corrections” tab when cash flow allows) · D319 recover <b>R1,269.66</b> · E420 refund <b>R300</b> · A011 new loan deduct <b>R438.20</b> (10% cap). OT hours &amp; back-pay now entered per card. <button class="mini" id="loadBP" style="background:#0f766e;color:#fff">▶ Load open corrections</button> <span style="color:var(--mut)">(E420 +300 · D319 −1,269.66 only. June standby back-pay FULLY SETTLED on the July run — Byron 26-Aug; F515 top-up R868.33 covered the one July shortfall, paid 23 Jul. All other back-pay: Byron enters manually per card)</span></div>
+  <div class="banner">⚠ <b>Run-wide carried items:</b> June standby back-pay <b>R28,583.92</b> prepayment (load per “Standby corrections” tab when cash flow allows) · D319 recover <b>R1,269.66</b> · <s>E420 refund R300</s> paid July · A011 new loan deduct <b>R438.20</b> (10% cap). OT hours &amp; back-pay now entered per card. <button class="mini" id="loadBP" style="background:#0f766e;color:#fff">▶ Load open corrections</button> <span style="color:var(--mut)">(D319 −1,269.66 only. E420 R300: ALREADY refunded on July run — audit 26-Aug, do not reload. June standby back-pay FULLY SETTLED July. All other back-pay: Byron enters manually per card)</span></div>
   <div class="leg">
     <span class="W">W worked</span><span class="A">A absent (no pay)</span><span class="S">S sick</span><span class="L">L leave</span>
     <span class="R">R rain (no pay)</span><span class="PH">PH pub. holiday (paid)</span><span class="PHW">PHW holiday WORKED</span><span class="P" style="padding:2px 8px;border-radius:4px;font-weight:700">P partial hrs (min 4h)</span><span class="F">F funeral (paid)</span><span class="PW">off / payweekend</span>
@@ -485,7 +485,7 @@ $("#reset").onclick=()=>{if(confirm("Wipe ALL entered days/tallies/notes for Aug
 function undoAct(){if(!undoStack.length)return;redoStack.push(JSON.stringify(st));st=JSON.parse(undoStack.pop());lastSnap=JSON.stringify(st);save(true);renderTabs();renderList()}
 function redoAct(){if(!redoStack.length)return;undoStack.push(JSON.stringify(st));st=JSON.parse(redoStack.pop());lastSnap=JSON.stringify(st);save(true);renderTabs();renderList()}
 document.getElementById("loadBP").onclick=()=>{
- const items=[["E420",300,"Refund loan over-deduction (June) — flat, no UIF"],["D319",-1269.66,"Recover June PH overpay (days vs hours)"]];
+ const items=[["D319",-1269.66,"Recover June PH overpay (days vs hours)"]];
  let n=0,skip=[];items.forEach(([c,a,w])=>{if(!EMPS().some(x=>x.c===c)){skip.push(c);return}const s2=emp(c);if(s2.bpA){skip.push(c+" (already has back-pay)");return}s2.bpA=a;s2.bpWhy=w;n++});
  save();renderTabs();renderList();alert("Loaded "+n+" open corrections."+(skip.length?" Skipped: "+skip.join(", "):""))};
 document.getElementById("undoB").onclick=undoAct;document.getElementById("redoB").onclick=redoAct;
