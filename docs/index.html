@@ -71,7 +71,7 @@ footer{position:fixed;bottom:0;left:0;right:0;background:#0f2537;color:#9fb6c6;f
 .ptwrap{overflow-x:auto;background:#fff;border:1px solid var(--line);border-radius:10px;padding:6px}
 .ptable{border-collapse:collapse;font-size:11.5px;white-space:nowrap;width:100%}
 .ptable th{background:#0f2537;color:#fff;padding:4px 7px;text-align:left;position:sticky;top:0}
-.ptable td{border-bottom:1px solid var(--line);padding:3px 7px}
+.ptable td{border:1px solid #d5dde5;padding:3px 7px}.ptable th{border:1px solid #33506a}
 .ptable tr:nth-child(even){background:#f8fafc}.ptable .tot td{background:#0f766e;color:#fff;font-weight:800}
 .frow{display:flex;gap:8px;align-items:center;font-size:12px;background:#fff;border:1px solid var(--line);border-radius:6px;padding:4px 8px;margin:3px 0}
 .prephead{background:#0f2537;color:#fff;border-radius:10px;padding:14px 18px;margin:8px 0}
@@ -83,7 +83,12 @@ footer{position:fixed;bottom:0;left:0;right:0;background:#0f2537;color:#9fb6c6;f
 @media print{header,nav,footer,.tools,.banner,.leg,.noprint{display:none!important}
  body{background:#fff;padding-bottom:0}main{max-width:none}
  .prephead{border-radius:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}
- .ptable{font-size:8.5px}.ptable th{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+ .ptable{font-size:8px;white-space:normal;width:100%}
+ .ptable td,.ptable th{border:.5pt solid #777;padding:2px 4px}
+ .ptable th{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+ .ptable thead{display:table-header-group}
+ .ptable tr{page-break-inside:avoid}
+ .ptable .tot td{border-top:1.5pt solid #333}
  .ptwrap{border:0;overflow:visible}
  @page{size:A4 landscape;margin:9mm}}
 </style>
@@ -310,9 +315,9 @@ function renderPhil(L){
   +(sp.ded.length?'<b class="h">Deductions:</b> '+sp.ded.join(" · ")+' (A011: cap at 10% of actual gross)':"")
   +(sp.zero.length?'<b class="h">Zero pay (no days, no PH):</b> '+sp.zero.join(", "):"")
   +'<b class="h">Standby rates:</b> general R62.65/day (June-corrections basis) · drivers R114.765 — amounts per person in the table.</div>';
- h+='<div class="ptwrap"><table class="ptable"><tr><th>Code</th><th>Employee</th><th>Basis</th><th>Days</th><th>PH</th><th>PHW</th><th>Part hrs</th><th>OT1.5 h</th><th>OT2 h</th><th>Sick</th><th>Leave</th><th>Funeral</th><th>Stby d</th><th>Stby rate</th><th>Stby R</th><th>Backpay R</th><th>Backpay reason</th><th>Loan ded R</th><th>Fuel ded R</th><th>Other ded R</th><th>Note</th></tr>';
+ h+='<div class="ptwrap"><table class="ptable"><thead><tr><th>Code</th><th>Employee</th><th>Basis</th><th>Days</th><th>PH</th><th>PHW</th><th>Part hrs</th><th>OT1.5 h</th><th>OT2 h</th><th>Sick</th><th>Leave</th><th>Funeral</th><th>Stby d</th><th>Stby rate</th><th>Stby R</th><th>Backpay R</th><th>Backpay reason</th><th>Loan ded R</th><th>Fuel ded R</th><th>Other ded R</th><th>Note</th></tr></thead><tbody>';
  rows.forEach(r=>{h+='<tr><td><b>'+r.c+'</b></td><td>'+r.n+'</td><td>'+(r.fx?"SALARIED":"daily")+'</td><td>'+r.days+'</td><td>'+r.ph+'</td><td>'+r.phw+'</td><td>'+r.part+'</td><td>'+r.o15+'</td><td>'+r.o2+'</td><td>'+r.sick+'</td><td>'+r.lv+'</td><td>'+r.fn+'</td><td>'+r.sd+'</td><td>'+r.sr+'</td><td>'+r.stot+'</td><td>'+r.bp+'</td><td>'+r.bpw+'</td><td>'+r.loan+'</td><td>'+r.fuel+'</td><td>'+r.oth+'</td><td>'+r.note+'</td></tr>'});
- h+='<tr class="tot"><td colspan="3">TOTALS</td><td>'+num("days")+'</td><td>'+num("ph")+'</td><td>'+num("phw")+'</td><td>'+num("part")+'</td><td>'+num("o15")+'</td><td>'+num("o2")+'</td><td>'+num("sick")+'</td><td>'+num("lv")+'</td><td>'+num("fn")+'</td><td>'+num("sd")+'</td><td></td><td>'+num("stot").toFixed(2)+'</td><td>'+num("bp").toFixed(2)+'</td><td></td><td>'+num("loan").toFixed(2)+'</td><td>'+num("fuel").toFixed(2)+'</td><td>'+num("oth").toFixed(2)+'</td><td></td></tr></table></div>';
+ h+='<tr class="tot"><td colspan="3">TOTALS</td><td>'+num("days")+'</td><td>'+num("ph")+'</td><td>'+num("phw")+'</td><td>'+num("part")+'</td><td>'+num("o15")+'</td><td>'+num("o2")+'</td><td>'+num("sick")+'</td><td>'+num("lv")+'</td><td>'+num("fn")+'</td><td>'+num("sd")+'</td><td></td><td>'+num("stot").toFixed(2)+'</td><td>'+num("bp").toFixed(2)+'</td><td></td><td>'+num("loan").toFixed(2)+'</td><td>'+num("fuel").toFixed(2)+'</td><td>'+num("oth").toFixed(2)+'</td><td></td></tr></tbody></table></div>';
  h+='<div class="psig"><span>Prepared: Byron (Buzztree) ______________</span><span>Captured in Pastel: Phil ______________</span><span>Date: ____________</span></div>';
  const dv=document.createElement("div");dv.innerHTML=h;L.appendChild(dv);
  dv.querySelector("#philCopy").onclick=()=>{const H=["Code","Employee","Basis","Days","PH","PHW","PartHrs","OT1.5h","OT2h","Sick","Leave","Funeral","StbyDays","StbyRate","StbyR","BackpayR","BackpayReason","LoanDedR","FuelDedR","OtherDedR","Note"];
