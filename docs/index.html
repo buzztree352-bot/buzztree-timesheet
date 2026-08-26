@@ -1,0 +1,335 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Buzztree — August 2026 Timesheet Entry (by team)</title>
+<style>
+:root{--bg:#f4f6f8;--card:#fff;--ink:#1a2733;--mut:#64748b;--line:#dbe2ea;--acc:#0f766e;
+--w:#16a34a;--wbg:#dcfce7;--a:#dc2626;--abg:#fee2e2;--s:#d97706;--sbg:#fef3c7;--l:#2563eb;--lbg:#dbeafe;
+--r:#475569;--rbg:#e2e8f0;--ph:#7c3aed;--phbg:#ede9fe;--off:#94a3b8;--offbg:#f1f5f9}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font:14px/1.45 "Segoe UI",system-ui,sans-serif;background:var(--bg);color:var(--ink);padding-bottom:60px}
+header{position:sticky;top:0;z-index:20;background:#0f2537;color:#fff;padding:10px 16px;box-shadow:0 2px 8px rgba(0,0,0,.25)}
+header h1{font-size:17px}
+.sub{font-size:12px;color:#9fb6c6;margin-top:2px}
+.hrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:8px}
+.btn{border:0;border-radius:6px;padding:6px 12px;font-size:12.5px;font-weight:600;cursor:pointer;background:#1d4e6b;color:#fff}
+.btn:hover{filter:brightness(1.15)}
+.btn.warn{background:#7c2d12}
+.btn.grn{background:var(--acc)}
+.prog{flex:1;min-width:140px;background:#1d3a4f;border-radius:8px;height:20px;position:relative;overflow:hidden}
+.prog>div{height:100%;background:#22c55e;transition:width .3s}
+.prog>span{position:absolute;inset:0;text-align:center;font-size:11.5px;line-height:20px;font-weight:700}
+.unlock{display:flex;align-items:center;gap:5px;font-size:12px;color:#fcd34d}
+nav{display:flex;gap:6px;padding:10px 16px;flex-wrap:wrap;position:sticky;top:86px;z-index:15;background:var(--bg)}
+nav button{border:1px solid var(--line);background:#fff;border-radius:20px;padding:6px 14px;font-size:13px;font-weight:600;cursor:pointer}
+nav button.on{background:#0f2537;color:#fff;border-color:#0f2537}
+nav .tb{font-size:11px;font-weight:400;opacity:.8}
+main{padding:0 16px;max-width:1080px;margin:0 auto}
+.banner{background:#fffbeb;border:1px solid #fcd34d;border-radius:8px;padding:8px 12px;font-size:12.5px;margin:8px 0}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;margin:10px 0;overflow:hidden}
+.card.done{border-color:#86efac;background:#f6fef8}
+.card.nopay{border-color:#fca5a5}
+.ehead{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:10px 12px;cursor:pointer}
+.code{font-weight:800;font-size:14px;background:#0f2537;color:#fff;border-radius:5px;padding:2px 7px}
+.name{font-weight:600;flex:1;min-width:150px}
+.fx{font-size:11px;font-weight:700;color:var(--ph);background:var(--phbg);padding:2px 7px;border-radius:10px}
+.chips{display:flex;gap:4px;flex-wrap:wrap;font-size:11px;font-weight:700}
+.chip{padding:2px 6px;border-radius:4px}
+.tally{width:52px;padding:4px;border:1px solid var(--line);border-radius:5px;font-size:13px;text-align:center}
+.match{font-size:15px;width:20px;text-align:center}
+.dn{display:flex;align-items:center;gap:4px;font-size:12px;color:var(--mut)}
+.dn input{width:17px;height:17px;accent-color:#16a34a}
+.flag{margin:0 12px 8px;background:var(--sbg);border-left:3px solid var(--s);padding:6px 9px;font-size:12px;border-radius:0 6px 6px 0}
+.flag.red{background:var(--abg);border-color:var(--a)}
+.body{display:none;padding:4px 12px 12px;border-top:1px dashed var(--line)}
+.card.open .body{display:block}
+.grid{display:grid;grid-template-columns:repeat(7,minmax(52px,1fr));gap:4px;margin-top:8px}
+.dow{font-size:10.5px;text-align:center;color:var(--mut);font-weight:700}
+.cell{border-radius:6px;padding:3px 2px;text-align:center;cursor:pointer;user-select:none;border:1.5px solid transparent;min-height:44px}
+.cell small{display:block;font-size:9.5px;opacity:.75}
+.cell b{font-size:12px}
+.cell .st{font-size:11px;font-weight:800;display:block;margin-top:1px}
+.cell.lk{cursor:not-allowed;opacity:.75}
+body.unlocked .cell.lk{cursor:pointer;opacity:1;outline:1px dashed #d97706}
+.empty{visibility:hidden}
+.W{background:var(--wbg);color:#14532d}.A{background:var(--abg);color:#7f1d1d}.S{background:var(--sbg);color:#78350f}
+.L{background:var(--lbg);color:#1e3a8a}.R{background:var(--rbg);color:#334155}.PH{background:var(--phbg);color:#4c1d95}
+.PHW{background:#7c3aed;color:#fff}.PW,.SUN,.NW{background:var(--offbg);color:var(--off)}
+.tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px;font-size:12.5px}
+.tools input[type=number]{width:60px;padding:4px;border:1px solid var(--line);border-radius:5px}
+.tools input[type=text]{flex:1;min-width:180px;padding:5px 8px;border:1px solid var(--line);border-radius:5px}
+.mini{border:1px solid var(--line);background:#fff;border-radius:5px;padding:4px 9px;font-size:12px;cursor:pointer}
+.leg{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0;font-size:11.5px}
+.leg span{padding:2px 8px;border-radius:4px;font-weight:700}
+footer{position:fixed;bottom:0;left:0;right:0;background:#0f2537;color:#9fb6c6;font-size:11.5px;padding:6px 16px;display:flex;gap:14px;flex-wrap:wrap}
+.sbrow{display:flex;gap:8px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:8px;padding:6px 10px;margin:4px 0;font-size:13px}
+.sbrow .name{flex:1;min-width:140px}.sbrow input{width:74px;padding:4px;border:1px solid var(--line);border-radius:5px;text-align:center;font-size:13px}
+.sbrow .tot{width:92px;text-align:right;font-weight:700}.sbg{margin:14px 0 4px;font-weight:800;font-size:13px;color:#0f2537}
+.sbref{font-size:11px;color:var(--mut);width:52px}.sbtotal{position:sticky;bottom:34px;background:#0f766e;color:#fff;border-radius:8px;padding:8px 14px;font-weight:700;display:flex;gap:18px;flex-wrap:wrap}
+@media print{header,nav,footer,.tools{display:none}}
+</style>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<script src="config.js"></script>
+</head>
+<body>
+<header>
+  <h1>Buzztree — August 2026 Timesheet Entry <span style="font-weight:400">· by team</span></h1>
+  <div class="sub">Period Thu 23 Jul → Wed 26 Aug 2026 · <b style="color:#fff">23 working days + 1 public holiday</b> (Mon 10 Aug) · Payweekend 24–27 Jul · Rain 11–12 Aug (no pay) · Sat 22 Aug not worked · Pay Thu 27 Aug</div>
+  <div class="hrow">
+    <div class="prog"><div id="pbar"></div><span id="ptxt"></span></div>
+    <label class="unlock"><input type="checkbox" id="unlock"> unlock fixed days</label>
+    <span id="authBox"></span>
+    <button class="btn grn" id="exCsv">⬇ Export CSV</button>
+    <button class="btn" id="exCopy">⧉ Copy summary</button>
+    <button class="btn" id="exJson">💾 Backup</button>
+    <button class="btn" id="imJson">📂 Restore</button>
+    <button class="btn" id="undoB" style="background:#334155">↶ Undo (0)</button>
+    <button class="btn" id="redoB" style="background:#334155">↷</button>
+    <button class="btn" id="linkF" style="background:#4338ca">🔗 Link autosave file</button>
+    <button class="btn warn" id="reset">Reset all</button>
+    <input type="file" id="jfile" accept=".json" style="display:none">
+  </div>
+</header>
+<nav id="tabs"></nav>
+<main>
+  <div class="banner">⚠ <b>Run-wide carried items:</b> June standby back-pay <b>R28,583.92</b> prepayment (load per “Standby corrections” tab when cash flow allows) · D319 recover <b>R1,269.66</b> · E420 refund <b>R300</b> · A011 new loan deduct <b>R438.20</b> (10% cap). OT hours &amp; back-pay now entered per card. <button class="mini" id="loadBP" style="background:#0f766e;color:#fff">▶ Load open corrections</button> <span style="color:var(--mut)">(E420 +300 · D319 −1,269.66 only. June standby back-pay FULLY SETTLED on the July run — Byron 26-Aug; F515 top-up R868.33 covered the one July shortfall, paid 23 Jul. All other back-pay: Byron enters manually per card)</span></div>
+  <div class="leg">
+    <span class="W">W worked</span><span class="A">A absent (no pay)</span><span class="S">S sick</span><span class="L">L leave</span>
+    <span class="R">R rain (no pay)</span><span class="PH">PH pub. holiday (paid)</span><span class="PHW">PHW holiday WORKED</span><span class="PW">off / payweekend</span>
+  </div>
+  <div style="font-size:12px;color:var(--mut)">Tap a day to cycle W → A → S → L. Tap 10 Aug to toggle PH ↔ PHW. Grey days are fixed — tick “unlock fixed days” to override. Everything autosaves in this browser; export CSV when a team is done.</div>
+  <div id="list"></div>
+</main>
+<footer><span id="fsave">saved ✓</span><span id="ffile" style="color:#fcd34d">autosave: browser only — link a file!</span><span>File: August 2026 Payroll → Timesheet entry</span><span>Decision-support only — Byron confirms &amp; pays</span></footer>
+<script>
+const DATA={emps:[],standby:[],days:[{"d": "2026-07-23", "w": "Th", "lbl": "23 Jul", "def": "W", "lock": false, "why": ""}, {"d": "2026-07-24", "w": "Fr", "lbl": "24 Jul", "def": "PW", "lock": true, "why": "Payweekend changeover break"}, {"d": "2026-07-25", "w": "Sa", "lbl": "25 Jul", "def": "PW", "lock": true, "why": "Payweekend changeover break"}, {"d": "2026-07-26", "w": "Su", "lbl": "26 Jul", "def": "PW", "lock": true, "why": "Payweekend changeover break"}, {"d": "2026-07-27", "w": "Mo", "lbl": "27 Jul", "def": "PW", "lock": true, "why": "Payweekend changeover break"}, {"d": "2026-07-28", "w": "Tu", "lbl": "28 Jul", "def": "W", "lock": false, "why": ""}, {"d": "2026-07-29", "w": "We", "lbl": "29 Jul", "def": "W", "lock": false, "why": ""}, {"d": "2026-07-30", "w": "Th", "lbl": "30 Jul", "def": "W", "lock": false, "why": ""}, {"d": "2026-07-31", "w": "Fr", "lbl": "31 Jul", "def": "W", "lock": false, "why": ""}, {"d": "2026-08-01", "w": "Sa", "lbl": "1 Aug", "def": "W", "lock": false, "why": ""}, {"d": "2026-08-02", "w": "Su", "lbl": "2 Aug", "def": "SUN", "lock": true, "why": "Sunday"}, {"d": "2026-08-03", "w": "Mo", "lbl": "3 Aug", "def": "W", "lock": false, "why": ""}, {"d": "2026-08-04", "w": "Tu", "lbl": "4 Aug", "def": "W", "lock": false, "why": ""}, {"d": "2026-08-05", "w": "We", "lbl": "5 Aug", "def": "W", "lock": false, "why": ""}, {"d": "2026-08-06", "w": "Th", "lbl": "6 Aug", "def": "W", "lock": false, "why": ""}, {"d": "2026-08-07", "w": "Fr", "lbl": "7 Aug", "def": "W", "lock": false, "why": ""}, {"d": "2026-08-08", "w": "Sa", "lbl": "8 Aug", "def": "W", "lock": false, "why": ""}, {"d": "2026-08-09", "w": "Su", "lbl": "9 Aug", "def": "SUN", "lock": true, "why": "Sunday"}, {"d": "2026-08-10", "w": "Mo", "lbl": "10 Aug", "def": "PH", "lock": false, "why": "Public holiday (Women's Day observed) — paid, not worked"}, {"d": "2026-08-11", "w": "Tu", "lbl": "11 Aug", "def": "R", "lock": true, "why": "Rain — no work, no pay"}, {"d": "2026-08-12", "w": "We", "lbl": "12 Aug", "def": "R", "lock": true, "why": "Rain — no work, no pay"}, {"d": "2026-08-13", "w": "Th", "lbl": "13 Aug", "def": "W", "lock": false, "why": ""}, {"d": "2026-08-14", "w": "Fr", "lbl": "14 Aug", "def": "W", "lock": false, "why": ""}, {"d": "2026-08-15", "w": "Sa", "lbl": "15 Aug", "def": "W", "lock": false, "why": ""}, {"d": "2026-08-16", "w": "Su", "lbl": "16 Aug", "def": "SUN", "lock": true, "why": "Sunday"}, {"d": "2026-08-17", "w": "Mo", "lbl": "17 Aug", "def": "W", "lock": false, "why": ""}, {"d": "2026-08-18", "w": "Tu", "lbl": "18 Aug", "def": "W", "lock": false, "why": ""}, {"d": "2026-08-19", "w": "We", "lbl": "19 Aug", "def": "W", "lock": false, "why": ""}, {"d": "2026-08-20", "w": "Th", "lbl": "20 Aug", "def": "W", "lock": false, "why": ""}, {"d": "2026-08-21", "w": "Fr", "lbl": "21 Aug", "def": "W", "lock": false, "why": ""}, {"d": "2026-08-22", "w": "Sa", "lbl": "22 Aug", "def": "NW", "lock": true, "why": "Saturday not worked (cycle shift) — no pay"}, {"d": "2026-08-23", "w": "Su", "lbl": "23 Aug", "def": "SUN", "lock": true, "why": "Sunday"}, {"d": "2026-08-24", "w": "Mo", "lbl": "24 Aug", "def": "W", "lock": false, "why": ""}, {"d": "2026-08-25", "w": "Tu", "lbl": "25 Aug", "def": "W", "lock": false, "why": ""}, {"d": "2026-08-26", "w": "We", "lbl": "26 Aug", "def": "W", "lock": false, "why": ""}]};let rosterLoaded=false,rosterMissing=false;
+const KEY="buzz-aug2026-ts-v1";
+function EMPS(){const ov=(st._emp||{});const out=[];
+ DATA.emps.forEach(b=>{const o=ov[b.c]||{};if(o.hide)return;out.push(Object.assign({},b,{n:o.n||b.n,t:o.t||b.t,fx:(o.fx!==undefined?o.fx:b.fx),nopay:(o.np!==undefined?o.np:b.nopay),f:(o.why?((b.f?b.f+" · ":"")+"EDITED: "+o.why):b.f),ed:o}))});
+ Object.keys(ov).forEach(c=>{const o=ov[c];if(o.added&&!o.hide)out.push({c:c,n:o.n||"?",t:o.t||"Team A",fx:!!o.fx,nopay:!!o.np,f:"ADDED during entry ("+(o.why||"no reason given")+") — not on workbook/register yet; paste-back to HR needed.",ed:o,added:true})});
+ return out}
+function logEdit(c,field,oldv,newv,why){if(!st._log)st._log=[];st._log.push({ts:new Date().toISOString(),c:c,f:field,o:String(oldv),n:String(newv),why:why||""})}
+// ---- file autosave (File System Access API) ----
+let fh=null,wTimer=null;
+const RUNID="aug-2026";let FB=null,fbUser=null,cloudTimer=null;
+function cloudInit(){if(!window.__FBCONFIG||!window.__FBCONFIG.apiKey){ffile("config.js pending — nothing loads without it",false);renderAuth();return}
+ try{firebase.initializeApp(window.__FBCONFIG);FB=firebase.firestore();try{FB.enablePersistence({synchronizeTabs:true})}catch(e){}
+  firebase.auth().onAuthStateChanged(u=>{fbUser=u;renderAuth();if(u)loadRoster();else{rosterLoaded=false;renderTabs();renderList()}});renderAuth();
+ }catch(e){ffile("cloud init failed: "+e.message,false)}}
+function renderAuth(){const b=document.getElementById("authBox");if(!b)return;
+ if(!window.__FBCONFIG||!window.__FBCONFIG.apiKey){b.innerHTML='<span style="font-size:11px;color:#fcd34d">config.js pending</span>';return}
+ b.innerHTML=fbUser?'<span style="font-size:11px;color:#86efac">☁ '+fbUser.email+'</span> <button class="btn" id="gso" style="background:#334155">Sign out</button>'
+  :'<button class="btn" id="gsi" style="background:#ea580c">🔑 Sign in with Google</button>';
+ const i=document.getElementById("gsi");if(i)i.onclick=()=>firebase.auth().signInWithPopup(new firebase.auth.GoogleAuthProvider()).catch(e=>alert(e.message));
+ const o=document.getElementById("gso");if(o)o.onclick=()=>firebase.auth().signOut();}
+function loadRoster(){FB.collection("roster").doc(RUNID).get().then(d=>{
+ if(d.exists){const j=d.data();DATA.emps=j.emps||[];DATA.standby=j.standby||[];rosterLoaded=true;rosterMissing=false;listenCloud();cloudPush();}
+ else{rosterMissing=true}
+ renderTabs();renderList()}).catch(e=>{ffile("roster load failed: "+e.code+" — allowlisted?",false);renderTabs();renderList()})}
+function seedRoster(txt){let j;try{j=JSON.parse(txt)}catch(e){alert("Not valid JSON");return}
+ if(!j.emps||!j.emps.length){alert("JSON must contain emps[] (use ROSTER-SEED_paste-once.json)");return}
+ FB.collection("roster").doc(RUNID).set({emps:j.emps,standby:j.standby||[],by:fbUser.email,at:new Date().toISOString()})
+ .then(()=>{alert("Roster seeded ("+j.emps.length+" employees). Never commit that file to GitHub.");loadRoster()})
+ .catch(e=>alert("Seed failed: "+e.code))}
+function cloudPush(){if(!FB||!fbUser||!rosterLoaded)return;clearTimeout(cloudTimer);cloudTimer=setTimeout(()=>{
+ FB.collection("runs").doc(RUNID).set({_ts:st._ts||Date.now(),state:st,by:fbUser.email,at:new Date().toISOString()})
+ .then(()=>ffile("cloud ✓ "+new Date().toLocaleTimeString(),true))
+ .catch(e=>ffile("cloud save FAILED: "+e.code,false))},900)}
+function listenCloud(){FB.collection("runs").doc(RUNID).onSnapshot(d=>{if(!d.exists)return;const j=d.data();
+ if(j&&j.state&&(j._ts||0)>(st._ts||0)){st=j.state;lastSnap=JSON.stringify(st);try{localStorage.setItem(KEY,JSON.stringify(st))}catch(e){};snapUI();renderTabs();renderList();ffile("cloud ⇩ pulled newer ("+(j.by||"?")+")",true)}})}
+const idb=()=>new Promise((res,rej)=>{const r=indexedDB.open("buzz-ts",1);r.onupgradeneeded=()=>r.result.createObjectStore("kv");r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)});
+async function idbSet(k,v){const d=await idb();return new Promise((res,rej)=>{const tx=d.transaction("kv","readwrite");tx.objectStore("kv").put(v,k);tx.oncomplete=res;tx.onerror=()=>rej(tx.error)})}
+async function idbGet(k){const d=await idb();return new Promise((res,rej)=>{const rq=d.transaction("kv").objectStore("kv").get(k);rq.onsuccess=()=>res(rq.result);rq.onerror=()=>rej(rq.error)})}
+function ffile(msg,ok){const f=document.getElementById("ffile");if(f){f.textContent=msg;f.style.color=ok?"#86efac":"#fcd34d"}}
+async function writeFile(){if(!fh)return;try{const w=await fh.createWritable();await w.write(JSON.stringify({_ts:st._ts||Date.now(),state:st},null,1));await w.close();ffile("autosave → "+fh.name+" ✓ "+new Date().toLocaleTimeString(),true)}catch(e){ffile("file save FAILED — use Copy backup",false)}}
+function queueWrite(){if(!fh)return;clearTimeout(wTimer);wTimer=setTimeout(writeFile,800)}
+async function linkFile(){try{
+ fh=await window.showSaveFilePicker({suggestedName:"Aug2026_Timesheet_AUTOSAVE.json",types:[{description:"JSON",accept:{"application/json":[".json"]}}]});
+ try{await idbSet("fh",fh)}catch(e){}
+ await writeFile();alert("Linked. Save it in August 2026 Payroll\\_work so the run and Claude can see it. It now autosaves on every change.")
+}catch(e){if(e.name!=="AbortError")alert("Your browser blocked the file picker — keep using ⧉/💾 backups instead.")}}
+async function reconnect(){try{
+ const h=await idbGet("fh");if(!h)return;
+ let p=await h.queryPermission({mode:"readwrite"});
+ if(p!=="granted")p=await h.requestPermission({mode:"readwrite"});
+ if(p!=="granted"){ffile("autosave file needs re-link (permission)",false);return}
+ fh=h;
+ try{const f=await h.getFile();const j=JSON.parse(await f.text());
+   if(j&&j.state&&(j._ts||0)>(st._ts||0)){st=j.state;lastSnap=JSON.stringify(st);ffile("loaded newer state from "+h.name+" ✓",true);renderTabs();renderList()}
+   else ffile("autosave → "+h.name+" ✓ linked",true)
+ }catch(e){ffile("autosave → "+h.name+" (empty) ✓",true)}
+}catch(e){}}
+const CY=["W","A","S","L"];
+let st={};try{st=JSON.parse(localStorage.getItem(KEY)||"{}")}catch(e){st={}}
+let cur="Team A";try{cur=localStorage.getItem(KEY+"-tab")||"Team A"}catch(e){}
+const $=s=>document.querySelector(s);
+function emp(c){if(c&&c[0]==="_")c="_x";if(!st[c])st[c]={d:{},tally:"",note:"",done:false};return st[c]}
+function dayVal(e,d){const s=emp(e.c);if(s.d[d.d])return s.d[d.d];if(e.nopay&&!d.lock&&(d.def==="W"||d.def==="PH"))return"A";return d.def}
+function counts(e){const r={W:0,A:0,S:0,L:0,R:0,PH:0,PHW:0};DATA.days.forEach(d=>{const v=dayVal(e,d);if(r[v]!==undefined)r[v]++});return r}
+let undoStack=[],redoStack=[],lastSnap=null;
+function snapUI(){const u=document.getElementById("undoB");if(u){u.textContent="↶ Undo ("+undoStack.length+")";u.style.opacity=undoStack.length?1:.45}const r=document.getElementById("redoB");if(r)r.style.opacity=redoStack.length?1:.45}
+function save(noHist){st._ts=Date.now();
+ if(!noHist&&lastSnap!==null){undoStack.push(lastSnap);if(undoStack.length>100)undoStack.shift();redoStack.length=0}
+ lastSnap=JSON.stringify(st);
+ try{localStorage.setItem(KEY,JSON.stringify(st))}catch(e){};queueWrite();cloudPush();snapUI();const f=$("#fsave");f.textContent="saved ✓ "+new Date().toLocaleTimeString();}
+function teamList(){return [...new Set(EMPS().map(e=>e.t))]}
+function teamProg(t){const es=EMPS().filter(e=>e.t===t);return[es.filter(e=>emp(e.c).done).length,es.length]}
+function renderTabs(){const n=$("#tabs");n.innerHTML="";teamList().forEach(t=>{const[d,tot]=teamProg(t);const b=document.createElement("button");b.className=t===cur?"on":"";b.innerHTML=t+' <span class="tb">'+d+"/"+tot+"</span>";b.onclick=()=>{cur=t;try{localStorage.setItem(KEY+"-tab",t)}catch(e){};renderTabs();renderList()};n.appendChild(b)});
+const sbn=Object.values(st._sb||{}).filter(x=>+x.d>0).length;
+const sb=document.createElement("button");sb.className=cur==="__SB__"?"on":"";sb.innerHTML='⚡ Standby <span class="tb">'+sbn+"/"+DATA.standby.length+"</span>";sb.onclick=()=>{cur="__SB__";try{localStorage.setItem(KEY+"-tab",cur)}catch(e){};renderTabs();renderList()};n.appendChild(sb);
+const done=EMPS().filter(e=>emp(e.c).done).length;$("#pbar").style.width=(100*done/EMPS().length)+"%";$("#ptxt").textContent=done+" / "+EMPS().length+" employees done"}
+function chipHtml(e){const s=emp(e.c);let ex="";if(+s.ot15||+s.ot2)ex+='<span class="chip L">OT</span>';if(+s.bpA)ex+='<span class="chip '+(+s.bpA<0?"A":"S")+'">R'+(+s.bpA).toFixed(0)+'</span>';
+if(e.fx)return ex+'<span class="fx">FIXED — salaried</span>';const c=counts(e);let h=ex+'<span class="chip W">'+c.W+'d</span><span class="chip PH">PH '+(c.PH||c.PHW)+(c.PHW?"·worked":"")+'</span>';
+if(c.S)h+='<span class="chip S">S'+c.S+'</span>';if(c.L)h+='<span class="chip L">L'+c.L+'</span>';if(c.A)h+='<span class="chip A">A'+c.A+'</span>';return h}
+function matchIcon(e){const s=emp(e.c);if(e.fx||s.tally==="")return"";return(+s.tally===counts(e).W)?"✅":"❌"}
+function edForm(e){const isNew=!e;const teams=[...new Set(DATA.emps.map(x=>x.t))];
+ return '<div class="edp" data-eform="'+(isNew?"__new__":e.c)+'" onclick="event.stopPropagation()" style="background:#f0f9ff;border:1px solid #7dd3fc;border-radius:8px;padding:10px;margin:8px 12px;display:grid;gap:6px;font-size:12.5px">'
+ +'<b>'+(isNew?"Add employee":"Edit "+e.c+" — code itself can\'t change (match key)")+'</b>'
+ +(isNew?'<label>Code <input data-f="c" style="width:90px" placeholder="e.g. B019T"></label>':"")
+ +'<label>Name <input data-f="n" value="'+(isNew?"":String(e.n).replace(/"/g,"&quot;"))+'" style="width:min(260px,90%)"></label>'
+ +'<label>Team <select data-f="t">'+teams.map(x=>'<option'+((!isNew&&e.t===x)?" selected":"")+'>'+x+'</option>').join("")+'</select></label>'
+ +'<label>Type <select data-f="fx"><option value="0"'+((!isNew&&!e.fx)?" selected":"")+'>DAILY (day grid)</option><option value="1"'+((!isNew&&e.fx)?" selected":"")+'>SALARIED / FIXED</option></select></label>'
+ +'<label><input type="checkbox" data-f="np"'+((!isNew&&e.nopay)?" checked":"")+'> no-pay (leaver / absconsion)</label>'
+ +(isNew?"":'<label><input type="checkbox" data-f="hide"> hide from this run (mistake / left)</label>')
+ +'<label>Reason <input data-f="why" placeholder="required — goes to audit log & HR paste-back" style="width:min(300px,90%)"></label>'
+ +'<div style="display:flex;gap:8px"><button class="mini" style="background:#0f766e;color:#fff" data-esave="'+(isNew?"__new__":e.c)+'">Save</button><button class="mini" data-ecancel="1">Cancel</button></div></div>'}
+const editSet=new Set();
+function renderCard(e){const s=emp(e.c);const card=document.createElement("div");card.className="card"+(s.done?" done":"")+(e.nopay?" nopay":"")+(openSet.has(e.c)?" open":"");
+let h='<div class="ehead" data-open="'+e.c+'"><span class="code">'+e.c+'</span><span class="name">'+e.n+(e.alias?' <small style="color:var(--mut)">(paper: '+e.alias+')</small>':"")+'</span><span class="chips">'+chipHtml(e)+'</span>';
+if(!e.fx)h+='<input class="tally" type="number" min="0" max="24" placeholder="tally" value="'+(s.tally??"")+'" data-tally="'+e.c+'" title="days per paper tally" onclick="event.stopPropagation()"><span class="match">'+matchIcon(e)+'</span>';
+h+='<button class="mini" data-edit="'+e.c+'" onclick="event.stopPropagation()" title="edit employee">✎</button><label class="dn" onclick="event.stopPropagation()"><input type="checkbox" data-done="'+e.c+'" '+(s.done?"checked":"")+'>done</label></div>';
+if(e.f)h+='<div class="flag'+(e.nopay?" red":"")+'">⚑ '+e.f+'</div>';
+if(editSet.has(e.c))h+=edForm(e);
+h+='<div class="body">'+(e.fx?'<div style="font-size:12.5px;color:var(--mut);padding:6px 0">Salaried — Basic Salary line, no day entry. Use the note for exceptions only.</div>':gridHtml(e))+
+'<div class="tools">OT1.5× <input type="number" step="0.5" min="0" data-ot15="'+e.c+'" value="'+(s.ot15||"")+'" style="width:58px" placeholder="h">h · OT2× <input type="number" step="0.5" min="0" data-ot2="'+e.c+'" value="'+(s.ot2||"")+'" style="width:58px" placeholder="h">h · Back-pay R <input type="number" step="0.01" data-bpa="'+e.c+'" value="'+(s.bpA||"")+'" style="width:84px" placeholder="±0.00"> <input type="text" data-bpw="'+e.c+'" value="'+(s.bpWhy||"").replace(/"/g,"&quot;")+'" placeholder="back-pay reason" style="flex:1;min-width:120px"></div>'+
+'<div class="tools"><input type="text" placeholder="note for Phil (sick note ref, part-day, etc.)" value="'+(s.note||"").replace(/"/g,"&quot;")+'" data-note="'+e.c+'">'+(e.fx?"":'<button class="mini" data-def="'+e.c+'">↺ defaults</button>')+'</div></div>';
+card.innerHTML=h;return card}
+function gridHtml(e){let h='<div class="grid"><div class="dow">Mo</div><div class="dow">Tu</div><div class="dow">We</div><div class="dow">Th</div><div class="dow">Fr</div><div class="dow">Sa</div><div class="dow">Su</div>';
+const pad={"Mo":0,"Tu":1,"We":2,"Th":3,"Fr":4,"Sa":5,"Su":6}[DATA.days[0].w];
+for(let i=0;i<pad;i++)h+='<div class="cell empty"></div>';
+DATA.days.forEach(d=>{const v=dayVal(e,d);h+='<div class="cell '+v+(d.lock?" lk":"")+'" data-day="'+d.d+'" data-emp="'+e.c+'" title="'+(d.why||d.lbl)+'"><small>'+d.w+'</small><b>'+d.lbl+'</b><span class="st">'+v+'</span></div>'});
+return h+"</div>"}
+const openSet=new Set();
+function sbGet(c){if(!st._sb)st._sb={};if(!st._sb[c])st._sb[c]={};return st._sb[c]}
+function sbRate(x){const s=(st._sb||{})[x.c];return(s&&s.r!==undefined&&s.r!=="")?+s.r:x.r}
+function sbDays(x){const s=(st._sb||{})[x.c];return(s&&s.d!==undefined&&s.d!=="")?+s.d:0}
+function liveName(c,fall){const e=EMPS().find(x=>x.c===c)||DATA.emps.find(x=>x.c===c);return e?e.n:fall}
+function sbList(){const extra=Object.keys(st._sb||{}).filter(c=>st._sb[c].added&&!DATA.standby.some(x=>x.c===c)).map(c=>({c:c,n:liveName(c,c),r:+st._sb[c].r||62.65,asg:"Added during entry",julyDays:0}));return DATA.standby.concat(extra)}
+function renderStandby(L){
+ let h='<div class="banner">⚡ <b>Standby days — August period.</b> General rate normalised <b>R60.8255 → R62.65</b> (Byron 26-Aug, per June corrections pack); Drivers R114.765. Rates editable per person. “Jul” column = last month\'s days for reference. D301: standby built into salary — leave 0.</div>';
+ const list=sbList();const q=(window._sbq||"").toLowerCase();
+ const groups=[...new Set(list.map(x=>x.asg))];
+ h+='<input type="text" id="sbq" placeholder="filter name / code…" value="'+(window._sbq||"")+'" style="padding:6px 10px;border:1px solid var(--line);border-radius:6px;width:min(280px,100%);margin:4px 0">';
+ let gt=0,gd=0,gn=0;
+ groups.forEach(g=>{const rows=list.filter(x=>x.asg===g&&(!q||x.c.toLowerCase().includes(q)||liveName(x.c,x.n).toLowerCase().includes(q)));if(!rows.length)return;
+  h+='<div class="sbg">'+g+'</div>';
+  rows.forEach(x=>{const d=sbDays(x),r=sbRate(x),tot=d*r;if(d>0){gt+=tot;gd+=d;gn++}
+   const missing=!EMPS().some(e=>e.c===x.c);
+   h+='<div class="sbrow"><span class="code">'+x.c+'</span><span class="name">'+liveName(x.c,x.n)+(missing?' <b style="color:var(--a)">⚠ not on run</b>':"")+'</span><span class="sbref">Jul: '+(x.julyDays||0)+'d</span>'
+    +'R <input type="number" step="0.0001" data-sbr="'+x.c+'" value="'+r+'" title="rate/day"> × <input type="number" min="0" max="35" data-sbd="'+x.c+'" value="'+(d||"")+'" placeholder="days"><span class="tot">'+(d?("R "+tot.toFixed(2)):"—")+'</span></div>'});
+ });
+ h+='<div style="margin:10px 0"><button class="mini" data-sbadd="1">＋ Add person to standby</button></div>';
+ h+='<div class="sbtotal"><span>'+gn+' people</span><span>'+gd+' standby days</span><span style="margin-left:auto">TOTAL R '+gt.toFixed(2)+'</span></div>';
+ const d=document.createElement("div");d.innerHTML=h;L.appendChild(d);
+ const qi=d.querySelector("#sbq");qi.oninput=()=>{window._sbq=qi.value;const pos=qi.selectionStart;renderList();const q2=document.querySelector("#sbq");if(q2){q2.focus();q2.setSelectionRange(pos,pos)}};
+}
+function renderList(){const L=$("#list");L.innerHTML="";
+ if(!rosterLoaded){
+  if(rosterMissing&&fbUser){L.innerHTML='<div class="banner"><b>First run — seed the roster.</b> Paste the contents of <code>ROSTER-SEED_paste-once.json</code> (from the cockpit folder — NEVER commit it to GitHub):<br><textarea id="seedT" style="width:100%;height:120px;margin:8px 0"></textarea><button class="mini" id="seedB" style="background:#0f766e;color:#fff">Seed roster</button></div>';
+   const b=L.querySelector("#seedB");b.onclick=()=>seedRoster(L.querySelector("#seedT").value);return}
+  L.innerHTML='<div class="banner">🔑 '+(window.__FBCONFIG&&window.__FBCONFIG.apiKey?(fbUser?"Loading roster…":"Sign in with Google (top right) to load the roster and entries."):"Waiting for config.js — see _SETUP-FOR-BYRON.md.")+'</div>';return}
+ if(cur==="__SB__"){renderStandby(L);return}EMPS().filter(e=>e.t===cur).forEach(e=>L.appendChild(renderCard(e)));
+ const d=document.createElement("div");d.innerHTML=editSet.has("__new__")?edForm(null):'<button class="mini" data-eadd="1" style="margin:6px 0 14px">＋ Add employee to '+cur+'</button>';L.appendChild(d)}
+document.addEventListener("click",ev=>{
+ const c=ev.target.closest(".cell:not(.empty)");if(c){const e=EMPS().find(x=>x.c===c.dataset.emp);const d=DATA.days.find(x=>x.d===c.dataset.day);
+   if(d.lock&&!document.body.classList.contains("unlocked"))return;
+   const s=emp(e.c);const v=dayVal(e,d);let nv;
+   if(d.d==="2026-08-10"){const seq=["PH","PHW","A"];nv=seq[(seq.indexOf(v)+1)%seq.length]}
+   else if(d.lock){const seq=[...CY,d.def];nv=seq[(seq.indexOf(v)+1)%seq.length]}
+   else nv=CY[(CY.indexOf(v)+1)%CY.length];
+   if(nv===d.def&&!e.nopay)delete s.d[d.d];else s.d[d.d]=nv;
+   save();renderList();renderTabs();return}
+ const h=ev.target.closest(".ehead");if(h){const id=h.dataset.open;openSet.has(id)?openSet.delete(id):openSet.add(id);renderList()}
+});
+document.addEventListener("change",ev=>{const t=ev.target;
+ if(t.dataset.sbd!==undefined){sbGet(t.dataset.sbd).d=t.value;save();renderTabs();renderList();return}
+ if(t.dataset.sbr!==undefined){sbGet(t.dataset.sbr).r=t.value;save();renderList();return}
+ if(t.dataset.done!==undefined){emp(t.dataset.done).done=t.checked;save();renderList();renderTabs()}
+ if(t.dataset.tally!==undefined){emp(t.dataset.tally).tally=t.value;save();renderList()}
+ if(t.dataset.note!==undefined){emp(t.dataset.note).note=t.value;save()}
+ if(t.dataset.ot15!==undefined){emp(t.dataset.ot15).ot15=t.value;save();renderTabs()}
+ if(t.dataset.ot2!==undefined){emp(t.dataset.ot2).ot2=t.value;save();renderTabs()}
+ if(t.dataset.bpa!==undefined){emp(t.dataset.bpa).bpA=t.value;save();renderTabs()}
+ if(t.dataset.bpw!==undefined){emp(t.dataset.bpw).bpWhy=t.value;save()}
+ if(t.id==="unlock")document.body.classList.toggle("unlocked",t.checked);
+});
+document.addEventListener("click",ev=>{const b=ev.target.closest("[data-def]");if(b){const s=emp(b.dataset.def);s.d={};save();renderList();renderTabs()}});
+document.addEventListener("click",ev=>{
+ const eb=ev.target.closest("[data-edit]");if(eb){const c=eb.dataset.edit;editSet.has(c)?editSet.delete(c):editSet.add(c);openSet.add(c);renderList();return}
+ if(ev.target.closest("[data-eadd]")){editSet.add("__new__");renderList();return}
+ if(ev.target.closest("[data-sbadd]")){const c=(prompt("Employee CODE to add to standby (must be on the run):")||"").trim().toUpperCase();if(!c)return;
+   if(!EMPS().some(e=>e.c===c)){alert(c+" is not on the August run");return}
+   if(sbList().some(x=>x.c===c)){alert(c+" already on the standby list");return}
+   const r=parseFloat(prompt("Rate per day for "+c+":","62.65")||"62.65");const s=sbGet(c);s.added=true;s.r=r;logEdit(c,"STANDBY-ADD","—","rate "+r,"added to standby during entry");save();renderTabs();renderList();return}
+ if(ev.target.closest("[data-ecancel]")){editSet.clear();renderList();return}
+ const sb=ev.target.closest("[data-esave]");if(sb){
+   const id=sb.dataset.esave;const form=document.querySelector('[data-eform="'+id+'"]');const g=f=>form.querySelector('[data-f="'+f+'"]');
+   if(!st._emp)st._emp={};
+   const why=g("why").value.trim();
+   if(id==="__new__"){
+     const code=(g("c").value||"").trim().toUpperCase();
+     if(!code){alert("Code required");return}
+     if(EMPS().some(x=>x.c===code)||DATA.emps.some(x=>x.c===code)){alert(code+" already exists");return}
+     if(!g("n").value.trim()){alert("Name required");return}
+     st._emp[code]={added:true,n:g("n").value.trim(),t:g("t").value,fx:g("fx").value==="1",np:g("np").checked,why:why||"added during entry"};
+     logEdit(code,"ADDED","—",g("n").value.trim()+" / "+g("t").value,why);
+   }else{
+     const cur0=EMPS().find(x=>x.c===id)||DATA.emps.find(x=>x.c===id);
+     const o=st._emp[id]||{};const base=DATA.emps.find(x=>x.c===id)||{};
+     const nn=g("n").value.trim(),nt=g("t").value,nfx=g("fx").value==="1",nnp=g("np").checked,nh=g("hide")&&g("hide").checked;
+     if((nn!==cur0.n||nt!==cur0.t||nfx!==!!cur0.fx||nnp!==!!cur0.nopay||nh)&&!why){alert("Give a reason — it goes to the audit log");return}
+     if(nn!==cur0.n)logEdit(id,"NAME",cur0.n,nn,why);
+     if(nt!==cur0.t)logEdit(id,"TEAM",cur0.t,nt,why);
+     if(nfx!==!!cur0.fx)logEdit(id,"TYPE",cur0.fx?"FIXED":"DAILY",nfx?"FIXED":"DAILY",why);
+     if(nnp!==!!cur0.nopay)logEdit(id,"NOPAY",!!cur0.nopay,nnp,why);
+     if(nh)logEdit(id,"HIDDEN","visible","hidden",why);
+     st._emp[id]=Object.assign(o,{n:nn,t:nt,fx:nfx,np:nnp,hide:nh||o.hide,why:why||o.why});
+   }
+   editSet.clear();save();renderTabs();renderList();return}
+});
+function rows(){return EMPS().map(e=>{const c=counts(e);const s=emp(e.c);
+ const ds=DATA.days.map(d=>d.lbl.replace(" ","")+"="+dayVal(e,d)).join(";");
+ return[e.t,e.c,e.n,e.fx?"FIXED":"DAILY",(e.added?"ADDED":(e.ed&&Object.keys(e.ed).length?"EDITED":"")),(e.ed&&e.ed.why)||"",s.tally||"",e.fx?"":c.W,e.fx?"":c.PH,e.fx?"":c.PHW,e.fx?"":c.S,e.fx?"":c.L,e.fx?"":c.A,e.fx?"":c.R,(s.ot15||""),(s.ot2||""),(s.bpA||""),(s.bpWhy||""),(s.note||""),s.done?"YES":"",sbD(e.c),sbR2(e.c),sbT(e.c),e.fx?"":ds]})}
+function sbX(c){return sbList().find(y=>y.c===c)}
+function sbD(c){const x=sbX(c);if(!x)return"";return sbDays(x)||""}
+function sbR2(c){const x=sbX(c);return x?sbRate(x):""}
+function sbT(c){const x=sbX(c);if(!x)return"";const d=sbDays(x);return d?(d*sbRate(x)).toFixed(2):""}
+const HDR=["Team","Code","Name","Type","Edited","EditReason","PaperTally","DAYS_Worked","PH","PHW","Sick","Leave","AbsentNoPay","RainNoPay","OT15h","OT2h","BackpayR","BackpayReason","Note","Done","StandbyDays","StandbyRate","StandbyTotal","DayDetail"];
+$("#exCsv").onclick=()=>{const csv=[HDR,...rows()].map(r=>r.map(x=>'"'+String(x).replace(/"/g,'""')+'"').join(",")).join("\r\n");
+ const a=document.createElement("a");a.href=URL.createObjectURL(new Blob(["﻿"+csv],{type:"text/csv"}));a.download="August_2026_Timesheet_Entry_EXPORT_"+new Date().toISOString().slice(0,10)+".csv";a.click()};
+$("#exCopy").onclick=()=>{const t=[HDR.slice(0,14),...rows().map(r=>r.slice(0,14))].map(r=>r.join("\t")).join("\n");navigator.clipboard.writeText(t).then(()=>alert("Summary copied — paste into Excel/chat"))};
+$("#exJson").onclick=()=>{const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([JSON.stringify(st)],{type:"application/json"}));a.download="Aug2026_timesheet_backup.json";a.click()};
+$("#imJson").onclick=()=>$("#jfile").click();
+$("#jfile").onchange=ev=>{const f=ev.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{st=JSON.parse(r.result);save();renderTabs();renderList()}catch(e){alert("Not a valid backup")}};r.readAsText(f)};
+$("#reset").onclick=()=>{if(confirm("Wipe ALL entered days/tallies/notes for August?")){st={};save();renderTabs();renderList()}};
+function undoAct(){if(!undoStack.length)return;redoStack.push(JSON.stringify(st));st=JSON.parse(undoStack.pop());lastSnap=JSON.stringify(st);save(true);renderTabs();renderList()}
+function redoAct(){if(!redoStack.length)return;undoStack.push(JSON.stringify(st));st=JSON.parse(redoStack.pop());lastSnap=JSON.stringify(st);save(true);renderTabs();renderList()}
+document.getElementById("loadBP").onclick=()=>{
+ const items=[["E420",300,"Refund loan over-deduction (June) — flat, no UIF"],["D319",-1269.66,"Recover June PH overpay (days vs hours)"]];
+ let n=0,skip=[];items.forEach(([c,a,w])=>{if(!EMPS().some(x=>x.c===c)){skip.push(c);return}const s2=emp(c);if(s2.bpA){skip.push(c+" (already has back-pay)");return}s2.bpA=a;s2.bpWhy=w;n++});
+ save();renderTabs();renderList();alert("Loaded "+n+" open corrections."+(skip.length?" Skipped: "+skip.join(", "):""))};
+document.getElementById("undoB").onclick=undoAct;document.getElementById("redoB").onclick=redoAct;
+document.addEventListener("keydown",e=>{const tg=e.target.tagName;if(tg==="INPUT"||tg==="TEXTAREA"||tg==="SELECT")return;
+ if(e.ctrlKey&&!e.shiftKey&&e.key.toLowerCase()==="z"){e.preventDefault();undoAct()}
+ if((e.ctrlKey&&e.key.toLowerCase()==="y")||(e.ctrlKey&&e.shiftKey&&e.key.toLowerCase()==="z")){e.preventDefault();redoAct()}});
+document.getElementById("linkF").onclick=linkFile;
+if(window.showSaveFilePicker){reconnect()}else{ffile("this browser can't autosave to file — use Copy backup",false)}
+lastSnap=JSON.stringify(st);snapUI();cloudInit();
+renderTabs();renderList();
+</script>
+</body>
+</html>
