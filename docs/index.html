@@ -158,7 +158,7 @@ function renderAuth(){const b=document.getElementById("authBox");if(!b)return;
  if(!window.__FBCONFIG||!window.__FBCONFIG.apiKey){b.innerHTML='<span style="font-size:11px;color:#fcd34d">config.js pending</span>';return}
  b.innerHTML=fbUser?'<span style="font-size:11px;color:#86efac">☁ '+fbUser.email+'</span> <button class="btn" id="gso" style="background:#334155">Sign out</button>'
   :'<button class="btn" id="gsi" style="background:#ea580c">🔑 Sign in with Google</button>';
- const i=document.getElementById("gsi");if(i)i.onclick=()=>firebase.auth().signInWithPopup(new firebase.auth.GoogleAuthProvider()).catch(e=>alert(e.message));
+ const i=document.getElementById("gsi");if(i)i.onclick=()=>{if(window.__SIP)return;window.__SIP=1;i.textContent="signing in\u2026";firebase.auth().signInWithPopup(new firebase.auth.GoogleAuthProvider()).catch(e=>{if(e.code==="auth/cancelled-popup-request"||e.code==="auth/popup-closed-by-user")return;return firebase.auth().signInWithRedirect(new firebase.auth.GoogleAuthProvider())}).catch(e=>alert(e.message+" \u2014 if this repeats: Chrome \u25b8 Settings \u25b8 Site settings \u25b8 Third-party cookies \u25b8 Allow")).finally(()=>{window.__SIP=0;renderAuth()})};
  const o=document.getElementById("gso");if(o)o.onclick=()=>firebase.auth().signOut();}
 function loadRoster(){FB.collection("roster").doc(RUNID).get().then(d=>{
  if(d.exists){const j=d.data();DATA.emps=j.emps||[];DATA.standby=j.standby||[];rosterLoaded=true;rosterMissing=false;listenCloud();cloudPush();}
@@ -576,7 +576,7 @@ if(window.showSaveFilePicker){reconnect()}else{ffile("this browser can't autosav
 lastSnap=JSON.stringify(st);snapUI();cloudInit();
 renderTabs();renderList();
 // ---- Companion-style offline-first (PWA): app shell cached, cold-start works in a dead zone ----
-const APP_VERSION="aug2026-v14";
+const APP_VERSION="aug2026-v15";
 if("serviceWorker" in navigator&&location.protocol==="https:"){
  navigator.serviceWorker.register("sw.js").then(reg=>{
   reg.addEventListener("updatefound",()=>{const w=reg.installing;if(!w)return;
