@@ -223,6 +223,8 @@ const sb=document.createElement("button");sb.className=cur==="__SB__"?"on":"";sb
 const dn=Object.values(st._ded||{}).filter(x=>(+x.l||+x.f||+x.o)).length;
 const pb=document.createElement("button");pb.className=cur==="__PHIL__"?"on":"";pb.innerHTML='📋 For Phil';pb.onclick=()=>{cur="__PHIL__";try{localStorage.setItem(KEY+"-tab",cur)}catch(e){};renderTabs();renderList()};n.appendChild(pb);
 const lb=document.createElement("button");lb.className=cur==="__LED__"?"on":"";lb.innerHTML='📒 Ledger';lb.onclick=()=>{cur="__LED__";try{localStorage.setItem(KEY+"-tab",cur)}catch(e){};renderTabs();ledLoad();renderList()};n.appendChild(lb);
+const sgn=Object.keys((st._sig||{})).length;
+const sg=document.createElement("button");sg.className=cur==="__SIG__"?"on":"";sg.innerHTML='✍ Receipts <span class="tb">'+sgn+'</span>';sg.onclick=()=>{cur="__SIG__";try{localStorage.setItem(KEY+"-tab",cur)}catch(e){};renderTabs();renderList()};n.appendChild(sg);
 const db=document.createElement("button");db.className=cur==="__DED__"?"on":"";db.innerHTML='💸 Deductions <span class="tb">'+dn+'</span>';db.onclick=()=>{cur="__DED__";try{localStorage.setItem(KEY+"-tab",cur)}catch(e){};renderTabs();renderList()};n.appendChild(db);
 const done=EMPS().filter(e=>emp(e.c).done).length;$("#pbar").style.width=(100*done/EMPS().length)+"%";$("#ptxt").textContent=done+" / "+EMPS().length+" employees done"}
 function chipHtml(e){const s=emp(e.c);let ex="";if(ot15Tot(e)||ot2Tot(e))ex+='<span class="chip L">OT'+((ot15Tot(e)||0)+(ot2Tot(e)||0))+'h</span>';if(+s.bpA)ex+='<span class="chip '+(+s.bpA<0?"A":"S")+'">R'+(+s.bpA).toFixed(0)+'</span>';
@@ -374,11 +376,40 @@ function renderDeductions(L){
  const dv=document.createElement("div");dv.innerHTML=h;L.appendChild(dv);
  const qi=dv.querySelector("#dq");qi.oninput=()=>{window._dq=qi.value;const p=qi.selectionStart;renderList();const q2=document.querySelector("#dq");if(q2){q2.focus();q2.setSelectionRange(p,p)}};
 }
+let SIGC=null,sigDrawn=false;
+function sigPanel(e){return '<div data-sigp="1" style="background:#fff;border:2px solid #0f766e;border-radius:10px;padding:12px;margin:8px 0">'
+ +'<b>'+e.c+' '+e.n+'</b><div style="font-size:12px;color:var(--mut);margin:4px 0">I confirm I received my payslip for the period 23/07/2026 – 26/08/2026. · '+new Date().toLocaleString()+'</div>'
+ +'<canvas id="sigC" width="700" height="180" style="width:100%;height:150px;border:1.5px dashed #94a3b8;border-radius:8px;touch-action:none;background:#fff"></canvas>'
+ +'<div style="display:flex;gap:8px;margin-top:8px"><button class="mini" data-sigclear="1">Clear</button><button class="mini" style="background:#0f766e;color:#fff" data-sigsave="'+e.c+'">✔ Save signature</button><button class="mini" data-sigcancel="1">Cancel</button></div></div>'}
+function sigWire(){const cv=document.getElementById("sigC");if(!cv)return;const ctx=cv.getContext("2d");ctx.lineWidth=3;ctx.lineCap="round";ctx.strokeStyle="#111";let on=false;
+ const pos=ev=>{const r=cv.getBoundingClientRect();return[(ev.clientX-r.left)*cv.width/r.width,(ev.clientY-r.top)*cv.height/r.height]};
+ cv.onpointerdown=ev=>{on=true;sigDrawn=true;const[x,y]=pos(ev);ctx.beginPath();ctx.moveTo(x,y);cv.setPointerCapture(ev.pointerId)};
+ cv.onpointermove=ev=>{if(!on)return;const[x,y]=pos(ev);ctx.lineTo(x,y);ctx.stroke()};
+ cv.onpointerup=()=>{on=false}}
+function renderReceipts(L){
+ const HOLD={"F502":1,"F515":1,"D317":1,"A038":1};
+ let h='<div class="banner">✍ <b>Payslip receipts — digital sign-on-receipt.</b> Hand over the slip, then the worker signs here with a finger. Each signature stores with name, code and timestamp in the same secured store (SIZA acknowledgment of receipt). Paper register stays as backup this month.</div>';
+ const sig=st._sig||{};let done=0,tot=0;
+ [...new Set(EMPS().map(e=>e.t))].forEach(tm=>{
+  const rows=EMPS().filter(e=>e.t===tm).filter(e=>{const c=counts(e);return e.fx||c.W>0||c.PH>0||c.S>0||c.F>0});
+  if(!rows.length)return;
+  h+='<div class="sbg">'+tm+'</div>';
+  rows.forEach(e=>{tot++;const s=sig[e.c];if(s)done++;
+   h+='<div class="frow"><span class="code">'+e.c+'</span><span class="name">'+e.n+'</span>'
+    +(HOLD[e.c]&&!s?'<span style="color:var(--s);font-size:12px">slip reissuing — sign on batch 3</span>':"")
+    +(s?'<span style="color:#0f766e;font-weight:700">✓ signed '+new Date(s.at).toLocaleTimeString()+'</span>'+(s.fid?' <a href="#" data-fview="'+s.fid+'" style="font-size:12px">view</a>':"")
+       :'<button class="mini" style="margin-left:auto;background:#0f2537;color:#fff" data-sig="'+e.c+'">✍ Sign</button>')
+    +'</div>';
+   if(SIGC===e.c)h+=sigPanel(e);
+  })});
+ h='<div class="sbtotal"><span>'+done+' / '+tot+' signed</span><span style="margin-left:auto">stored in Firestore · timestamped</span></div>'+h;
+ const dv=document.createElement("div");dv.innerHTML=h;L.appendChild(dv);sigWire();}
 function renderList(){const L=$("#list");L.innerHTML="";
  if(!rosterLoaded){
   if(rosterMissing&&fbUser){L.innerHTML='<div class="banner"><b>First run — seed the roster.</b> Paste the contents of <code>ROSTER-SEED_paste-once.json</code> (from the cockpit folder — NEVER commit it to GitHub):<br><textarea id="seedT" style="width:100%;height:120px;margin:8px 0"></textarea><button class="mini" id="seedB" style="background:#0f766e;color:#fff">Seed roster</button></div>';
    const b=L.querySelector("#seedB");b.onclick=()=>seedRoster(L.querySelector("#seedT").value);return}
   L.innerHTML='<div class="banner">🔑 '+(window.__FBCONFIG&&window.__FBCONFIG.apiKey?(fbUser?"Loading roster…":"Sign in with Google (top right) to load the roster and entries."):"Waiting for config.js — see _SETUP-FOR-BYRON.md.")+'</div>';return}
+ if(cur==="__SIG__"){renderReceipts(L);return}
  if(cur==="__PHIL__"){renderPhil(L);return}
  if(cur==="__LED__"){renderLedger(L);return}
  if(cur==="__DED__"){renderDeductions(L);return}
@@ -420,6 +451,16 @@ document.addEventListener("click",ev=>{
  const eb=ev.target.closest("[data-edit]");if(eb){const c=eb.dataset.edit;editSet.has(c)?editSet.delete(c):editSet.add(c);openSet.add(c);renderList();return}
  if(ev.target.closest("[data-eadd]")){editSet.add("__new__");renderList();return}
  if(ev.target.closest("[data-dall]")){window._dall=!window._dall;renderList();return}
+ const sgb=ev.target.closest("[data-sig]");if(sgb){SIGC=sgb.dataset.sig;sigDrawn=false;renderList();return}
+ if(ev.target.closest("[data-sigcancel]")){SIGC=null;renderList();return}
+ if(ev.target.closest("[data-sigclear]")){const cv=document.getElementById("sigC");cv.getContext("2d").clearRect(0,0,cv.width,cv.height);sigDrawn=false;return}
+ const sgs=ev.target.closest("[data-sigsave]");if(sgs){const code=sgs.dataset.sigsave;
+   if(!sigDrawn){alert("Nothing signed yet — let them sign first");return}
+   const cv=document.getElementById("sigC");const b64=cv.toDataURL("image/png").split(",")[1];
+   const e=EMPS().find(x=>x.c===code);
+   FB.collection("files").add({run:RUNID,code:code,kind:"payslip-receipt-signature",name:code+"_"+e.n.replace(/\s+/g,"-")+"_receipt_Aug2026.png",mime:"image/png",data:b64,by:fbUser.email,at:new Date().toISOString()})
+   .then(ref=>{if(!st._sig)st._sig={};st._sig[code]={at:new Date().toISOString(),fid:ref.id};logEdit(code,"RECEIPT-SIGNED","—","payslip receipt signature captured","digital sign-on-receipt");SIGC=null;save();renderTabs();renderList()})
+   .catch(err=>alert("Save failed: "+err.code));return}
  const fpb=ev.target.closest("[data-fp]");if(fpb){filesOpen(fpb.dataset.fp);return}
  if(ev.target.closest("[data-fpclose]")){FPC=null;FPL=null;renderList();return}
  const fv=ev.target.closest("[data-fview]");if(fv){ev.preventDefault();fileView(fv.dataset.fview);return}
