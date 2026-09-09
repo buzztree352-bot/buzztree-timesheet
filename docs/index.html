@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Buzztree — August 2026 Timesheet Entry (by team)</title>
+<title id="pgTitle">Buzztree — Timesheet Entry (by team)</title>
 <style>
 :root{--bg:#f4f6f8;--card:#fff;--ink:#1a2733;--mut:#64748b;--line:#dbe2ea;--acc:#0f766e;
 --w:#16a34a;--wbg:#dcfce7;--a:#dc2626;--abg:#fee2e2;--s:#d97706;--sbg:#fef3c7;--l:#2563eb;--lbg:#dbeafe;
@@ -109,8 +109,8 @@ footer{position:fixed;bottom:0;left:0;right:0;background:#0f2537;color:#9fb6c6;f
 </head>
 <body>
 <header>
-  <h1>Buzztree — August 2026 Timesheet Entry <span style="font-weight:400">· by team</span></h1>
-  <div class="sub">Period Thu 23 Jul → Wed 26 Aug 2026 · <b style="color:#fff">23 working days + 1 public holiday</b> (Mon 10 Aug) · Payweekend 24–27 Jul · Rain 11–12 Aug (no pay) · Sat 22 Aug not worked · Pay Thu 27 Aug</div>
+  <h1 id="pgH1">Buzztree — Timesheet Entry <span style="font-weight:400">· by team</span></h1>
+  <div class="sub" id="pgSub">loading run…</div>
   <div class="hrow">
     <div class="prog"><div id="pbar"></div><span id="ptxt"></span></div>
     <label class="unlock"><input type="checkbox" id="unlock"> unlock fixed days</label>
@@ -122,6 +122,7 @@ footer{position:fixed;bottom:0;left:0;right:0;background:#0f2537;color:#9fb6c6;f
     <button class="btn" id="undoB" style="background:#334155">↶ Undo (0)</button>
     <button class="btn" id="redoB" style="background:#334155">↷</button>
     <button class="btn" id="linkF" style="background:#4338ca">🔗 Link autosave file</button>
+    <button class="btn" id="runB" style="background:#7c3aed">⚙ Run / month</button>
     <button class="btn warn" id="reset">Reset all</button>
     <input type="file" id="jfile" accept=".json" style="display:none">
   </div>
@@ -133,13 +134,13 @@ footer{position:fixed;bottom:0;left:0;right:0;background:#0f2537;color:#9fb6c6;f
     <span class="W">W worked</span><span class="A">A absent (no pay)</span><span class="S">S sick</span><span class="L">L leave</span>
     <span class="R">R rain (no pay)</span><span class="PH">PH pub. holiday (paid)</span><span class="PHW">PHW holiday WORKED</span><span class="P" style="padding:2px 8px;border-radius:4px;font-weight:700">P partial hrs (min 4h)</span><span class="F">F funeral (paid)</span><span class="PW">off / payweekend</span>
   </div>
-  <div style="font-size:12px;color:var(--mut)">Tap a day to cycle W → A → S → L. Tap 10 Aug to toggle PH ↔ PHW. Grey days are fixed — tick “unlock fixed days” to override. Everything autosaves in this browser; export CSV when a team is done.</div>
+  <div style="font-size:12px;color:var(--mut)">Tap a day to cycle W → A → S → L. Tap a public-holiday day to toggle PH ↔ PHW. Grey days are fixed — tick “unlock fixed days” to override. Everything autosaves in this browser; export CSV when a team is done.</div>
   <div id="list"></div>
 </main>
-<footer><span id="fsave">saved ✓</span><span id="ffile" style="color:#fcd34d">autosave: browser only — link a file!</span><span>File: August 2026 Payroll → Timesheet entry</span><span>Decision-support only — Byron confirms &amp; pays</span></footer>
+<footer><span id="fsave">saved ✓</span><span id="ffile" style="color:#fcd34d">autosave: browser only — link a file!</span><span id="pgFile">File: Timesheet entry</span><span>Decision-support only — Byron confirms &amp; pays</span></footer>
 <script>
 const DATA={emps:[],standby:[],days:[{"d": "2026-07-23", "w": "Th", "lbl": "23 Jul", "def": "W", "lock": false, "why": ""}, {"d": "2026-07-24", "w": "Fr", "lbl": "24 Jul", "def": "PW", "lock": true, "why": "Payweekend changeover break"}, {"d": "2026-07-25", "w": "Sa", "lbl": "25 Jul", "def": "PW", "lock": true, "why": "Payweekend changeover break"}, {"d": "2026-07-26", "w": "Su", "lbl": "26 Jul", "def": "PW", "lock": true, "why": "Payweekend changeover break"}, {"d": "2026-07-27", "w": "Mo", "lbl": "27 Jul", "def": "PW", "lock": true, "why": "Payweekend changeover break"}, {"d": "2026-07-28", "w": "Tu", "lbl": "28 Jul", "def": "W", "lock": false, "why": ""}, {"d": "2026-07-29", "w": "We", "lbl": "29 Jul", "def": "W", "lock": false, "why": ""}, {"d": "2026-07-30", "w": "Th", "lbl": "30 Jul", "def": "W", "lock": false, "why": ""}, {"d": "2026-07-31", "w": "Fr", "lbl": "31 Jul", "def": "W", "lock": false, "why": ""}, {"d": "2026-08-01", "w": "Sa", "lbl": "1 Aug", "def": "W", "lock": false, "why": ""}, {"d": "2026-08-02", "w": "Su", "lbl": "2 Aug", "def": "SUN", "lock": true, "why": "Sunday"}, {"d": "2026-08-03", "w": "Mo", "lbl": "3 Aug", "def": "W", "lock": false, "why": ""}, {"d": "2026-08-04", "w": "Tu", "lbl": "4 Aug", "def": "W", "lock": false, "why": ""}, {"d": "2026-08-05", "w": "We", "lbl": "5 Aug", "def": "W", "lock": false, "why": ""}, {"d": "2026-08-06", "w": "Th", "lbl": "6 Aug", "def": "W", "lock": false, "why": ""}, {"d": "2026-08-07", "w": "Fr", "lbl": "7 Aug", "def": "W", "lock": false, "why": ""}, {"d": "2026-08-08", "w": "Sa", "lbl": "8 Aug", "def": "W", "lock": false, "why": ""}, {"d": "2026-08-09", "w": "Su", "lbl": "9 Aug", "def": "SUN", "lock": true, "why": "Sunday"}, {"d": "2026-08-10", "w": "Mo", "lbl": "10 Aug", "def": "PH", "lock": false, "why": "Public holiday (Women's Day observed) — paid, not worked"}, {"d": "2026-08-11", "w": "Tu", "lbl": "11 Aug", "def": "R", "lock": true, "why": "Rain — no work, no pay"}, {"d": "2026-08-12", "w": "We", "lbl": "12 Aug", "def": "R", "lock": true, "why": "Rain — no work, no pay"}, {"d": "2026-08-13", "w": "Th", "lbl": "13 Aug", "def": "W", "lock": false, "why": ""}, {"d": "2026-08-14", "w": "Fr", "lbl": "14 Aug", "def": "W", "lock": false, "why": ""}, {"d": "2026-08-15", "w": "Sa", "lbl": "15 Aug", "def": "W", "lock": false, "why": ""}, {"d": "2026-08-16", "w": "Su", "lbl": "16 Aug", "def": "SUN", "lock": true, "why": "Sunday"}, {"d": "2026-08-17", "w": "Mo", "lbl": "17 Aug", "def": "W", "lock": false, "why": ""}, {"d": "2026-08-18", "w": "Tu", "lbl": "18 Aug", "def": "W", "lock": false, "why": ""}, {"d": "2026-08-19", "w": "We", "lbl": "19 Aug", "def": "W", "lock": false, "why": ""}, {"d": "2026-08-20", "w": "Th", "lbl": "20 Aug", "def": "W", "lock": false, "why": ""}, {"d": "2026-08-21", "w": "Fr", "lbl": "21 Aug", "def": "W", "lock": false, "why": ""}, {"d": "2026-08-22", "w": "Sa", "lbl": "22 Aug", "def": "NW", "lock": true, "why": "Saturday not worked (cycle shift) — no pay"}, {"d": "2026-08-23", "w": "Su", "lbl": "23 Aug", "def": "SUN", "lock": true, "why": "Sunday"}, {"d": "2026-08-24", "w": "Mo", "lbl": "24 Aug", "def": "W", "lock": false, "why": ""}, {"d": "2026-08-25", "w": "Tu", "lbl": "25 Aug", "def": "W", "lock": false, "why": ""}, {"d": "2026-08-26", "w": "We", "lbl": "26 Aug", "def": "W", "lock": false, "why": ""}]};let rosterLoaded=false,rosterMissing=false;
-const KEY="buzz-aug2026-ts-v1";
+let KEY="buzz-aug2026-ts-v1";
 const SIGNMODE=new URLSearchParams(location.search).get("mode")==="sign";
 if(SIGNMODE)document.addEventListener("DOMContentLoaded",()=>{document.querySelectorAll(".hrow .btn,.unlock").forEach(b=>{if(b.id!=="gso"&&!b.closest("#authBox"))b.style.display="none"})});
 function EMPS(){const ov=(st._emp||{});const out=[];
@@ -149,10 +150,10 @@ function EMPS(){const ov=(st._emp||{});const out=[];
 function logEdit(c,field,oldv,newv,why){if(!st._log)st._log=[];st._log.push({ts:new Date().toISOString(),c:c,f:field,o:String(oldv),n:String(newv),why:why||""})}
 // ---- file autosave (File System Access API) ----
 let fh=null,wTimer=null;
-const RUNID="aug-2026";let FB=null,fbUser=null,cloudTimer=null;
+let RUNID="aug-2026";let FB=null,fbUser=null,cloudTimer=null;
 function cloudInit(){if(!window.__FBCONFIG||!window.__FBCONFIG.apiKey){ffile("config.js pending — nothing loads without it",false);renderAuth();return}
  try{firebase.initializeApp(window.__FBCONFIG);FB=firebase.firestore();try{FB.enablePersistence({synchronizeTabs:true})}catch(e){}
-  firebase.auth().onAuthStateChanged(u=>{fbUser=u;renderAuth();if(u)loadRoster();else{rosterLoaded=false;renderTabs();renderList()}});renderAuth();
+  firebase.auth().onAuthStateChanged(u=>{fbUser=u;renderAuth();if(u)loadPeriod().then(loadRoster);else{rosterLoaded=false;renderTabs();renderList()}});renderAuth();
  }catch(e){ffile("cloud init failed: "+e.message,false)}}
 function renderAuth(){const b=document.getElementById("authBox");if(!b)return;
  if(!window.__FBCONFIG||!window.__FBCONFIG.apiKey){b.innerHTML='<span style="font-size:11px;color:#fcd34d">config.js pending</span>';return}
@@ -182,9 +183,9 @@ function ffile(msg,ok){const f=document.getElementById("ffile");if(f){f.textCont
 async function writeFile(){if(!fh)return;try{const w=await fh.createWritable();await w.write(JSON.stringify({_ts:st._ts||Date.now(),state:st},null,1));await w.close();ffile("autosave → "+fh.name+" ✓ "+new Date().toLocaleTimeString(),true)}catch(e){ffile("file save FAILED — use Copy backup",false)}}
 function queueWrite(){if(!fh)return;clearTimeout(wTimer);wTimer=setTimeout(writeFile,800)}
 async function linkFile(){try{
- fh=await window.showSaveFilePicker({suggestedName:"Aug2026_Timesheet_AUTOSAVE.json",types:[{description:"JSON",accept:{"application/json":[".json"]}}]});
+ fh=await window.showSaveFilePicker({suggestedName:PFILE()+"_Timesheet_AUTOSAVE.json",types:[{description:"JSON",accept:{"application/json":[".json"]}}]});
  try{await idbSet("fh",fh)}catch(e){}
- await writeFile();alert("Linked. Save it in August 2026 Payroll\\_work so the run and Claude can see it. It now autosaves on every change.")
+ await writeFile();alert("Linked. Save it in "+PLBL()+" Payroll\\_work so the run and Claude can see it. It now autosaves on every change.")
 }catch(e){if(e.name!=="AbortError")alert("Your browser blocked the file picker — keep using ⧉/💾 backups instead.")}}
 async function reconnect(){try{
  const h=await idbGet("fh");if(!h)return;
@@ -197,6 +198,160 @@ async function reconnect(){try{
    else ffile("autosave → "+h.name+" ✓ linked",true)
  }catch(e){ffile("autosave → "+h.name+" (empty) ✓",true)}
 }catch(e){}}
+
+/* ================= RUN / MONTH CONFIG =================
+   The period is no longer baked into this file. It lives in Firestore at
+   runs/_periods (the list) and runs/_current (which one is live), both inside
+   the already-allowlisted "runs" collection, so no security-rule change is needed.
+   Byron sets it from the gear button; crews on ?mode=sign just follow the live run. */
+const WDN=["Su","Mo","Tu","We","Th","Fr","Sa"];
+const MNN=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const MFULL=["January","February","March","April","May","June","July","August","September","October","November","December"];
+const DEFW={W:{lock:false,why:""},
+ PW:{lock:true,why:"Payweekend changeover break"},
+ PH:{lock:false,why:"Public holiday \u2014 paid, not worked"},
+ R:{lock:true,why:"Rain \u2014 no work, no pay"},
+ NW:{lock:true,why:"Not worked \u2014 no pay"},
+ SUN:{lock:true,why:"Sunday"}};
+const SETCY=["W","PW","PH","R","NW","SUN"];
+let PERIOD=null,PERIODS=[],SETUP=null;
+const FALLBACK_PERIOD={id:"aug-2026",label:"August 2026",start:"2026-07-23",end:"2026-08-26",payday:"2026-08-27",days:DATA.days.slice()};
+/* Build the date string by hand -- toISOString() shifts a local midnight back a day in UTC+2. */
+function isoOf(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
+function dmy(s){if(!s)return"?";const d=new Date(s+"T12:00:00");return WDN[d.getDay()]+" "+d.getDate()+" "+MNN[d.getMonth()]+" "+d.getFullYear()}
+function PLBL(){return PERIOD?PERIOD.label:"this"}
+function PFILE(){return PERIOD?PERIOD.label.replace(/\s+/g,"_"):"run"}
+function PSUBTXT(){if(!PERIOD)return"";
+ const wd=DATA.days.filter(x=>x.def==="W").length,phd=DATA.days.filter(x=>x.def==="PH");
+ const ex=DATA.days.filter(x=>x.def==="R"||x.def==="NW");
+ return"Period "+dmy(PERIOD.start)+" \u2192 "+dmy(PERIOD.end)+" \u00b7 "+wd+" working days"
+  +(phd.length?" + "+phd.length+" public holiday"+(phd.length>1?"s":"")+" ("+phd.map(x=>x.lbl).join(", ")+", paid)":"")
+  +(ex.length?" \u00b7 no work, no pay: "+ex.map(x=>x.lbl).join(", "):"")
+  +" \u00b7 PAY DAY "+dmy(PERIOD.payday)}
+function mkDays(start,end){const out=[];const d=new Date(start+"T12:00:00"),e=new Date(end+"T12:00:00");let g=0;
+ while(d<=e&&g++<400){const w=d.getDay(),k=(w===0?"SUN":"W");
+  out.push({d:isoOf(d),w:WDN[w],lbl:d.getDate()+" "+MNN[d.getMonth()],def:k,lock:DEFW[k].lock,why:DEFW[k].why});
+  d.setDate(d.getDate()+1)}
+ return out}
+function mkLabel(end){const e=new Date(end+"T12:00:00");return MFULL[e.getMonth()]+" "+e.getFullYear()}
+function mkId(end){const e=new Date(end+"T12:00:00");return MNN[e.getMonth()].toLowerCase()+"-"+e.getFullYear()}
+
+function paintPeriod(){if(!PERIOD)return;
+ document.title="Buzztree \u2014 "+PERIOD.label+" Timesheet Entry (by team)";
+ const h=document.getElementById("pgH1");
+ if(h)h.innerHTML='Buzztree \u2014 '+PERIOD.label+' Timesheet Entry <span style="font-weight:400">\u00b7 by team</span>';
+ const s=document.getElementById("pgSub");if(s)s.textContent=PSUBTXT();
+ const f=document.getElementById("pgFile");if(f)f.textContent="File: "+PERIOD.label+" Payroll \u2192 Timesheet entry";}
+
+function applyPeriod(p){
+ PERIOD=p;RUNID=p.id;KEY="buzz-"+p.id+"-ts-v1";DATA.days=(p.days&&p.days.length)?p.days:FALLBACK_PERIOD.days;
+ try{st=JSON.parse(localStorage.getItem(KEY)||"{}")}catch(e){st={}}
+ try{cur=localStorage.getItem(KEY+"-tab")||"Team A"}catch(e){cur="Team A"}
+ lastSnap=JSON.stringify(st);paintPeriod();snapUI();renderTabs();renderList()}
+
+function loadPeriod(){
+ if(!FB||!fbUser){applyPeriod(FALLBACK_PERIOD);return Promise.resolve()}
+ return FB.collection("runs").doc("_periods").get()
+  .then(d=>{PERIODS=(d.exists&&d.data().list)||[];return FB.collection("runs").doc("_current").get()})
+  .then(d=>{const id=(d.exists&&d.data().run)||null;
+    const p=PERIODS.filter(x=>x.id===id)[0]||PERIODS[PERIODS.length-1]||FALLBACK_PERIOD;
+    applyPeriod(p);
+    if(!PERIODS.length)ffile("no run configured yet \u2014 press \u2699 Run / month to set one up",false)})
+  .catch(e=>{ffile("run config load failed: "+e.code+" \u2014 using "+FALLBACK_PERIOD.label,false);applyPeriod(FALLBACK_PERIOD)})}
+
+function savePeriod(p,copyFrom){
+ const list=PERIODS.filter(x=>x.id!==p.id).concat([p]);
+ list.sort((a,b)=>a.start<b.start?-1:1);
+ return FB.collection("runs").doc("_periods").set({list:list,_ts:Date.now(),by:fbUser.email,at:new Date().toISOString()})
+  .then(()=>{PERIODS=list;return FB.collection("runs").doc("_current").set({run:p.id,by:fbUser.email,at:new Date().toISOString()})})
+  .then(()=>{if(!copyFrom||copyFrom===p.id)return null;
+    return FB.collection("roster").doc(p.id).get().then(d=>{
+      if(d.exists&&(d.data().emps||[]).length)return null;
+      return FB.collection("roster").doc(copyFrom).get().then(s=>{
+        if(!s.exists)return null;const j=s.data();
+        return FB.collection("roster").doc(p.id).set({emps:j.emps||[],standby:j.standby||[],by:fbUser.email,at:new Date().toISOString(),copiedFrom:copyFrom})})})})}
+
+/* ---- the setup panel ---- */
+function rsPaint(){const g=document.getElementById("rsGrid");if(!g)return;
+ if(!SETUP||!SETUP.days.length){g.innerHTML='<div style="font-size:12px;color:#94a3b8">Pick the three dates above, then press <b>Generate days</b>.</div>';return}
+ let h='<div style="font-size:12px;color:#94a3b8;margin-bottom:6px">Tap a day to cycle it: <b>W</b> worked \u2192 <b>PW</b> payweekend \u2192 <b>PH</b> public holiday \u2192 <b>R</b> rain \u2192 <b>NW</b> not worked \u2192 <b>SUN</b>. Tap \u270e to reword the reason.</div><div style="display:flex;flex-wrap:wrap;gap:5px">';
+ SETUP.days.forEach((d,i)=>{
+  h+='<div style="text-align:center;font-size:10.5px"><button class="mini '+d.def+'" data-rsd="'+i+'" title="'+(d.why||"worked")+'" style="min-width:58px;padding:3px 4px;line-height:1.25">'+d.w+" "+d.lbl+'<br><b>'+d.def+'</b></button>'
+   +(d.def==="W"?"":'<br><button class="mini" data-rsw="'+i+'" style="background:#334155;color:#fff;padding:0 5px;margin-top:1px">\u270e</button>')+'</div>'});
+ h+='</div>';
+ const wd=SETUP.days.filter(x=>x.def==="W").length,ph=SETUP.days.filter(x=>x.def==="PH").length;
+ h+='<div style="margin-top:9px;font-size:12.5px;color:#e2e8f0"><b>'+wd+'</b> working days \u00b7 <b>'+ph+'</b> public holiday(s) \u00b7 '+SETUP.days.length+' days in the period</div>';
+ g.innerHTML=h}
+
+function runPanel(){
+ if(!fbUser){alert("Sign in first \u2014 the run config lives in the cloud so every phone gets the same one.");return}
+ const old=document.getElementById("runOv");if(old)old.remove();
+ const p=PERIOD||FALLBACK_PERIOD;
+ SETUP={days:[]};
+ const ov=document.createElement("div");ov.id="runOv";ov.className="noprint";
+ ov.style.cssText="position:fixed;inset:0;background:rgba(6,17,28,.9);z-index:300;overflow:auto;padding:18px";
+ const inp="background:#0b1b2b;color:#e2e8f0;border:1px solid #1e3a52;border-radius:5px;padding:5px 7px;font-size:13px";
+ let opts="";PERIODS.forEach(x=>{opts+='<option value="'+x.id+'"'+(x.id===p.id?" selected":"")+'>'+x.label+"</option>"});
+ if(!opts)opts='<option value="'+p.id+'">'+p.label+"</option>";
+ ov.innerHTML='<div style="max-width:920px;margin:0 auto;background:#0f2537;border:1px solid #1e3a52;border-radius:10px;padding:16px;color:#e2e8f0">'
+  +'<h2 style="margin:0 0 3px;font-size:17px">Run / month setup</h2>'
+  +'<div style="font-size:12px;color:#94a3b8;margin-bottom:12px">Live run: <b style="color:#fff">'+p.label+'</b> \u00b7 '+dmy(p.start)+' \u2192 '+dmy(p.end)+' \u00b7 pay '+dmy(p.payday)+'</div>'
+  +'<div style="font-size:13px;font-weight:700;margin-bottom:6px">Start a new month</div>'
+  +'<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:11px">'
+  +'<label style="font-size:11.5px;color:#94a3b8">Period starts<br><input type="date" id="rsS" style="'+inp+'"></label>'
+  +'<label style="font-size:11.5px;color:#94a3b8">Period ends<br><input type="date" id="rsE" style="'+inp+'"></label>'
+  +'<label style="font-size:11.5px;color:#94a3b8">Pay day<br><input type="date" id="rsP" style="'+inp+'"></label>'
+  +'<button class="btn" id="rsGen" style="background:#0f766e">Generate days</button></div>'
+  +'<div id="rsGrid"></div>'
+  +'<div style="margin-top:13px;display:flex;gap:10px;flex-wrap:wrap;align-items:center">'
+  +'<label style="font-size:12px"><input type="checkbox" id="rsCopy" checked> carry the crew list forward from <b>'+p.label+'</b></label>'
+  +'<button class="btn grn" id="rsSave">Save &amp; make this the live run</button></div>'
+  +'<div style="margin-top:15px;border-top:1px solid #1e3a52;padding-top:11px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">'
+  +'<span style="font-size:12px;color:#94a3b8">Or switch to an existing run:</span>'
+  +'<select id="rsSel" style="'+inp+'">'+opts+'</select>'
+  +'<button class="btn" id="rsGo" style="background:#1d4e6b">Switch</button>'
+  +'<span style="flex:1"></span><button class="btn" id="rsX" style="background:#334155">Close</button></div>'
+  +'<div style="margin-top:10px;font-size:11.5px;color:#94a3b8">Each run keeps its own entries, roster, signatures and uploads. Switching never touches another month. Crews on the sign-only link always follow the live run.</div>'
+  +'</div>';
+ document.body.appendChild(ov);
+ document.getElementById("rsX").onclick=()=>ov.remove();
+ document.getElementById("rsGen").onclick=()=>{
+  const s=document.getElementById("rsS").value,e=document.getElementById("rsE").value;
+  if(!s||!e){alert("Pick the start and end dates first.");return}
+  if(e<s){alert("The end date is before the start date.");return}
+  SETUP.days=mkDays(s,e);rsPaint()};
+ document.getElementById("rsGo").onclick=()=>{
+  const id=document.getElementById("rsSel").value;
+  const t=PERIODS.filter(x=>x.id===id)[0];if(!t){alert("That run isn\'t saved yet.");return}
+  FB.collection("runs").doc("_current").set({run:id,by:fbUser.email,at:new Date().toISOString()})
+   .then(()=>{applyPeriod(t);ov.remove();ffile("switched to "+t.label+" \u2713",true)})
+   .catch(err=>alert("Switch failed: "+err.code))};
+ ov.addEventListener("click",ev=>{
+  const a=ev.target.closest("[data-rsd]");
+  if(a){const i=+a.getAttribute("data-rsd"),d=SETUP.days[i];
+   const k=SETCY[(SETCY.indexOf(d.def)+1)%SETCY.length];
+   d.def=k;d.lock=DEFW[k].lock;d.why=DEFW[k].why;rsPaint();return}
+  const b=ev.target.closest("[data-rsw]");
+  if(b){const i=+b.getAttribute("data-rsw"),d=SETUP.days[i];
+   const t=prompt("Reason for "+d.w+" "+d.lbl+" ("+d.def+") \u2014 this shows on the card and the printed register:",d.why||"");
+   if(t!==null){d.why=t;rsPaint()}return}});
+ document.getElementById("rsSave").onclick=()=>{
+  const s=document.getElementById("rsS").value,e=document.getElementById("rsE").value,pd=document.getElementById("rsP").value;
+  if(!s||!e||!pd){alert("Pick the start, end and pay day.");return}
+  if(!SETUP.days.length){alert("Press Generate days first, then set any holidays or no-pay days.");return}
+  const np={id:mkId(e),label:mkLabel(e),start:s,end:e,payday:pd,days:SETUP.days,by:fbUser.email,at:new Date().toISOString()};
+  const clash=PERIODS.filter(x=>x.id===np.id)[0];
+  if(clash&&!confirm("A run called \""+np.label+"\" already exists ("+dmy(clash.start)+" \u2192 "+dmy(clash.end)+").\\n\\nOverwrite its dates and day grid? Entries already captured are kept."))return;
+  const wd=SETUP.days.filter(x=>x.def==="W").length;
+  if(!confirm(np.label+"\\n"+dmy(s)+" \u2192 "+dmy(e)+"\\nPay "+dmy(pd)+"\\n"+wd+" working days\\n\\nMake this the live run for every device?"))return;
+  const btn=document.getElementById("rsSave");btn.disabled=true;btn.textContent="saving\u2026";
+  savePeriod(np,document.getElementById("rsCopy").checked?p.id:null)
+   .then(()=>{applyPeriod(np);ov.remove();ffile(np.label+" is now the live run \u2713",true);
+     alert(np.label+" is live.\\n\\nEvery signed-in device picks it up on next load. August stays exactly as it is.")})
+   .catch(err=>{btn.disabled=false;btn.textContent="Save & make this the live run";alert("Save failed: "+err.code+"\\n\\nNothing was changed.")})};
+}
+/* ================= end run config ================= */
+
 const CY=["W","A","S","L"];
 let st={};try{st=JSON.parse(localStorage.getItem(KEY)||"{}")}catch(e){st={}}
 let cur="Team A";try{cur=localStorage.getItem(KEY+"-tab")||"Team A"}catch(e){}
@@ -278,7 +433,7 @@ function sbDays(x){const s=(st._sb||{})[x.c];return(s&&s.d!==undefined&&s.d!==""
 function liveName(c,fall){const e=EMPS().find(x=>x.c===c)||DATA.emps.find(x=>x.c===c);return e?e.n:fall}
 function sbList(){const extra=Object.keys(st._sb||{}).filter(c=>st._sb[c].added&&!DATA.standby.some(x=>x.c===c)).map(c=>({c:c,n:liveName(c,c),r:+st._sb[c].r||62.65,asg:"Added during entry",julyDays:0}));return DATA.standby.concat(extra)}
 function renderStandby(L){
- let h='<div class="banner">⚡ <b>Standby days — August period.</b> General rate normalised <b>R60.8255 → R62.65</b> (Byron 26-Aug, per June corrections pack); Drivers R114.765. Rates editable per person. “Jul” column = last month\'s days for reference. D301: standby built into salary — leave 0.</div>';
+ let h='<div class="banner">⚡ <b>Standby days — '+PLBL()+' period.</b> General rate normalised <b>R60.8255 → R62.65</b> (Byron 26-Aug, per June corrections pack); Drivers R114.765. Rates editable per person. “Jul” column = last month\'s days for reference. D301: standby built into salary — leave 0.</div>';
  const list=sbList();const q=(window._sbq||"").toLowerCase();
  const groups=[...new Set(list.map(x=>x.asg))];
  h+='<input type="text" id="sbq" placeholder="filter name / code…" value="'+(window._sbq||"")+'" style="padding:6px 10px;border:1px solid var(--line);border-radius:6px;width:min(280px,100%);margin:4px 0">';
@@ -316,7 +471,7 @@ function renderPhil(L){
  const rows=philRows();const num=k=>rows.reduce((a,r)=>a+(+r[k]||0),0);const sp=philSpecifics();
  let h='<div class="banner noprint">📋 This page IS the deliverable — <b>🖨 Print → Save as PDF (Landscape)</b> and send that to Phil; generated live from the entered data. <button class="mini" id="philCopy" style="background:#0f766e;color:#fff">⧉ Copy for Phil</button> <button class="mini" onclick="window.print()">🖨 Print / Save as PDF</button></div>';
  h+='<div class="prephead"><h2>BUZZTREE (PTY) LTD — AUGUST 2026 PAYRUN · Sage Pastel keying sheet</h2>'
-  +'<div class="pline">Period Thu 23 Jul → Wed 26 Aug 2026 (5-week cycle) · <b>23 working days + 1 public holiday (Mon 10 Aug, paid)</b> · Rain 11–12 Aug and Sat 22 Aug: no work, no pay · <b>PAY DAY Thu 27 Aug 2026</b></div>'
+  +'<div class="pline">'+PSUBTXT()+'</div>'
   +'<div class="pline">Generated live from the Buzztree timesheet app · '+new Date().toLocaleString()+' · signed in: '+(fbUser?fbUser.email:"—")+' · all entries audit-logged</div>'
   +'<div class="ptots"><span>'+num("days")+' worked days</span><span>'+num("ph")+' PH</span><span>'+num("part")+' partial hrs</span><span>OT1.5 '+num("o15")+'h</span><span>OT2 '+num("o2")+'h</span><span>'+num("sick")+' sick</span><span>'+num("fn")+' funeral</span><span>standby R '+num("stot").toFixed(2)+'</span><span>backpay R '+num("bp").toFixed(2)+'</span><span>deductions R '+(num("loan")+num("fuel")+num("oth")).toFixed(2)+'</span></div></div>';
  h+='<div class="pspec"><b class="h">SPECIFICS FOR THIS RUN</b>'
@@ -370,7 +525,7 @@ function filesPanel(e){let h='<div style="background:#fefce8;border:1px solid #f
  else FPL.forEach(f=>{h+='<div class="frow"><span>'+(f.kind||"")+'</span><a href="#" data-fview="'+f.id+'">'+f.name+'</a><span style="margin-left:auto;color:var(--mut)">'+(f.at||"").slice(0,10)+'</span></div>'});
  return h+"</div>"}
 function renderDeductions(L){
- let h='<div class="banner">💸 <b>Deductions — August run.</b> Loan register: only OPEN loan is <b>A011 R2,000</b> (deduct <b>R438.20</b> this run — 10%-of-gross cap, Staff Loans 8171). E419 CLOSED. Fuel/other: from your records. Everything flows to CSV + write-back, audit-logged. <button class="mini" data-dla011="1" style="background:#0f766e;color:#fff">Load A011 R438.20</button></div>';
+ let h='<div class="banner">💸 <b>Deductions — '+PLBL()+' run.</b> Loan register: only OPEN loan is <b>A011 R2,000</b> (deduct <b>R438.20</b> this run — 10%-of-gross cap, Staff Loans 8171). E419 CLOSED. Fuel/other: from your records. Everything flows to CSV + write-back, audit-logged. <button class="mini" data-dla011="1" style="background:#0f766e;color:#fff">Load A011 R438.20</button></div>';
  const q=(window._dq||"").toLowerCase();
  h+='<input type="text" id="dq" placeholder="filter name / code…" value="'+(window._dq||"")+'" style="padding:6px 10px;border:1px solid var(--line);border-radius:6px;width:min(280px,100%);margin:4px 0">';
  let tl=0,tf=0,to=0;
@@ -451,7 +606,7 @@ document.addEventListener("click",ev=>{
    if(pHrs(e,d)!==null){alert("Partial-hours day ("+pHrs(e,d)+"h worked → "+payHrs(pHrs(e,d))+"h payable). Right-click it to change or clear.");return}
    if(d.lock&&!document.body.classList.contains("unlocked"))return;
    const s=emp(e.c);const v=dayVal(e,d);let nv;
-   if(d.d==="2026-08-10"){const seq=["PH","PHW","A"];nv=seq[(seq.indexOf(v)+1)%seq.length]}
+   if(d.def==="PH"){const seq=["PH","PHW","A"];nv=seq[(seq.indexOf(v)+1)%seq.length]}
    else if(d.lock){const seq=[...CY,d.def];nv=seq[(seq.indexOf(v)+1)%seq.length]}
    else nv=CY[(CY.indexOf(v)+1)%CY.length];
    if(nv===d.def&&!e.nopay)delete s.d[d.d];else s.d[d.d]=nv;
@@ -495,7 +650,7 @@ document.addEventListener("click",ev=>{
    const cv=document.getElementById("sigC");const b64=cv.toDataURL("image/png").split(",")[1];
    const e=EMPS().find(x=>x.c===code);
    const ref=FB.collection("files").doc();
-   ref.set({run:RUNID,code:code,kind:"payslip-receipt-signature",name:code+"_"+e.n.replace(/\s+/g,"-")+"_receipt_Aug2026.png",mime:"image/png",data:b64,by:fbUser.email,at:new Date().toISOString()}).catch(err=>ffile("sig upload queued/failed: "+err.code,false));
+   ref.set({run:RUNID,code:code,kind:"payslip-receipt-signature",name:code+"_"+e.n.replace(/\s+/g,"-")+"_receipt_"+PFILE()+".png",mime:"image/png",data:b64,by:fbUser.email,at:new Date().toISOString()}).catch(err=>ffile("sig upload queued/failed: "+err.code,false));
    if(!st._sig)st._sig={};st._sig[code]={at:new Date().toISOString(),fid:ref.id};
    logEdit(code,"RECEIPT-SIGNED","—","payslip receipt signature captured","digital sign-on-receipt (offline-safe)");
    SIGC=null;save();renderTabs();renderList();return}
@@ -509,7 +664,7 @@ document.addEventListener("click",ev=>{
  if(ev.target.closest("[data-dla011]")){const d=dedGet("A011");if(d.l){alert("A011 already has a loan deduction")}else{d.l=438.20;d.w=((d.w||"")+" staff loan repay of R2,000 (10% cap)").trim();logEdit("A011","LOAN-DEDUCT","0","438.20","loan register: R2,000 granted Jul, first repayment Aug");save();renderTabs();renderList()}return}
  if(ev.target.closest("[data-sbjuly]")){let n=0;DATA.standby.forEach(x=>{const s=sbGet(x.c);if((s.d===undefined||s.d==="")&&x.julyDays>0){s.d=x.julyDays;n++}});logEdit("STANDBY","PREFILL","blanks","July days copied to "+n+" people","Byron prefill — adjust changes by hand");save();renderTabs();renderList();alert("Prefilled "+n+" people from July. Adjust the changed ones, zero the fallen-away.");return}
  if(ev.target.closest("[data-sbadd]")){const c=(prompt("Employee CODE to add to standby (must be on the run):")||"").trim().toUpperCase();if(!c)return;
-   if(!EMPS().some(e=>e.c===c)){alert(c+" is not on the August run");return}
+   if(!EMPS().some(e=>e.c===c)){alert(c+" is not on the "+PLBL()+" run");return}
    if(sbList().some(x=>x.c===c)){alert(c+" already on the standby list");return}
    const r=parseFloat(prompt("Rate per day for "+c+":","62.65")||"62.65");const s=sbGet(c);s.added=true;s.r=r;logEdit(c,"STANDBY-ADD","—","rate "+r,"added to standby during entry");save();renderTabs();renderList();return}
  if(ev.target.closest("[data-ecancel]")){editSet.clear();renderList();return}
@@ -555,12 +710,12 @@ function sbR2(c){const x=sbX(c);return x?sbRate(x):""}
 function sbT(c){const x=sbX(c);if(!x)return"";const d=sbDays(x);return d?(d*sbRate(x)).toFixed(2):""}
 const HDR=["Team","Code","Name","Type","Edited","EditReason","PaperTally","DAYS_Worked","PH","PHW","Sick","Leave","FuneralPaid","AbsentNoPay","RainNoPay","PartialHrsActual","PartialHrsPayable","OT15h","OT2h","BackpayR","BackpayReason","LoanDeductR","FuelDeductR","OtherDeductR","DeductReason","Note","Done","StandbyDays","StandbyRate","StandbyTotal","DayDetail"];
 $("#exCsv").onclick=()=>{const csv=[HDR,...rows()].map(r=>r.map(x=>'"'+String(x).replace(/"/g,'""')+'"').join(",")).join("\r\n");
- const a=document.createElement("a");a.href=URL.createObjectURL(new Blob(["﻿"+csv],{type:"text/csv"}));a.download="August_2026_Timesheet_Entry_EXPORT_"+new Date().toISOString().slice(0,10)+".csv";a.click()};
+ const a=document.createElement("a");a.href=URL.createObjectURL(new Blob(["﻿"+csv],{type:"text/csv"}));a.download=PFILE()+"_Timesheet_Entry_EXPORT_"+new Date().toISOString().slice(0,10)+".csv";a.click()};
 $("#exCopy").onclick=()=>{const t=[HDR.slice(0,14),...rows().map(r=>r.slice(0,14))].map(r=>r.join("\t")).join("\n");navigator.clipboard.writeText(t).then(()=>alert("Summary copied — paste into Excel/chat"))};
-$("#exJson").onclick=()=>{const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([JSON.stringify(st)],{type:"application/json"}));a.download="Aug2026_timesheet_backup.json";a.click()};
+$("#exJson").onclick=()=>{const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([JSON.stringify(st)],{type:"application/json"}));a.download=PFILE()+"_timesheet_backup.json";a.click()};
 $("#imJson").onclick=()=>$("#jfile").click();
 $("#jfile").onchange=ev=>{const f=ev.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{st=JSON.parse(r.result);save();renderTabs();renderList()}catch(e){alert("Not a valid backup")}};r.readAsText(f)};
-$("#reset").onclick=()=>{if(confirm("Wipe ALL entered days/tallies/notes for August?")){st={};save();renderTabs();renderList()}};
+$("#reset").onclick=()=>{if(confirm("Wipe ALL entered days/tallies/notes for "+PLBL()+"?")){st={};save();renderTabs();renderList()}};
 function undoAct(){if(!undoStack.length)return;redoStack.push(JSON.stringify(st));st=JSON.parse(undoStack.pop());lastSnap=JSON.stringify(st);save(true);renderTabs();renderList()}
 function redoAct(){if(!redoStack.length)return;undoStack.push(JSON.stringify(st));st=JSON.parse(redoStack.pop());lastSnap=JSON.stringify(st);save(true);renderTabs();renderList()}
 document.getElementById("loadBP").onclick=()=>{
@@ -572,11 +727,12 @@ document.addEventListener("keydown",e=>{const tg=e.target.tagName;if(tg==="INPUT
  if(e.ctrlKey&&!e.shiftKey&&e.key.toLowerCase()==="z"){e.preventDefault();undoAct()}
  if((e.ctrlKey&&e.key.toLowerCase()==="y")||(e.ctrlKey&&e.shiftKey&&e.key.toLowerCase()==="z")){e.preventDefault();redoAct()}});
 document.getElementById("linkF").onclick=linkFile;
+document.getElementById("runB").onclick=runPanel;
 if(window.showSaveFilePicker){reconnect()}else{ffile("this browser can't autosave to file — use Copy backup",false)}
 lastSnap=JSON.stringify(st);snapUI();cloudInit();
 renderTabs();renderList();
 // ---- Companion-style offline-first (PWA): app shell cached, cold-start works in a dead zone ----
-const APP_VERSION="aug2026-v15";
+const APP_VERSION="runs-v16";
 if("serviceWorker" in navigator&&location.protocol==="https:"){
  navigator.serviceWorker.register("sw.js").then(reg=>{
   reg.addEventListener("updatefound",()=>{const w=reg.installing;if(!w)return;
