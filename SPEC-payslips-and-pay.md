@@ -138,6 +138,20 @@ If a deduction can't be taken in full, the shortfall is carried to the next run 
 - The template is a versioned file (HTML → PDF) with merge fields. The office can change wording, logo and footer without code changes;
   the calculation fields are fixed.
 
+### 4.1 Payslip designer (custom editor + logo upload)
+An office screen (**🎨 Payslip design**) to make the slip look the way Buzztree wants, without code changes:
+- **Logo upload:** PNG / JPG / SVG. The designer crops and scales it to the header and shows a **black-and-white preview**, so the
+  logo still reads on a mono print or photocopy. It can also be used on the calendar and letters.
+- **Company block:** name, trading name, address, phone, email, UIF number, PAYE reference, company registration number (all from settings).
+- **Blocks, drag to order:** header · employee details · earnings table · deductions table (with balances) · totals / nett ·
+  company contributions · leave balances · year-to-date IRP5 boxes · message line (e.g. "Pay day moved to Friday") · signature / receipt line.
+- **Style:** font (a small set that prints well), colours / accent, line weights, logo size, bilingual labels on or off, per-label wording.
+- **Locked items:** anything the BCEA s33 requires (employer name and address, period, earnings, deductions, nett, hours, rate) **can't be
+  removed or hidden**. The designer shows a checklist that stays green only while every required item is present.
+- **Live preview** with a real employee from the current run (office only) and a **test print** of one 2-up sheet.
+- **Versions:** each saved design is a version with "use from run …". Old runs keep the design they were printed with, so a reprint looks the same.
+- The same designer (smaller) handles the **calendar back page** and the **letter templates** (rate change, warnings, termination, certificate of service).
+
 ## 5. Generator
 
 - Runs on a **locked** run. Before lock, slips can be previewed with a **DRAFT** watermark only.

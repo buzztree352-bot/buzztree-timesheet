@@ -45,6 +45,27 @@ Firestore rules must be extended for these collections, with **roles** (see §12
 - **Standing items:** active loans, garnishee orders, Avbob / funeral policy, recurring allowances (car, fuel), each with its consent doc.
 - **Compliance:** SIZA / audit flags, POPIA notice given (date), contract signed (date and doc), ID copy on file.
 
+### 1.2 Photo and contact details
+- **Photo:** taken with the phone camera in the app, or uploaded. Cropped to a head-and-shoulders square and compressed.
+  It's used on the profile, the timesheet card (optional), and the **signing screen**, so whoever hands out slips can see it's the right person before they sign.
+  It can also go on an ID / access card print. The POPIA notice covers the photo, and the employee can ask for it to be removed.
+- **Contact:** cell number (with a "WhatsApp: yes/no" flag), alternative number, email (optional), **residential address**
+  (street / farm, area, town, postal code), postal address if different, preferred language, next of kin (name, relationship, number).
+- Numbers are checked for SA format (10 digits / +27) and duplicates. Two staff sharing a number is flagged, not blocked.
+
+### 1.3 Tax information (what SARS needs for PAYE and IRP5)
+- **Income tax reference number** (10 digits, format and check-digit validated), or "not registered" + date applied.
+- **ID / passport** with the date of birth and citizenship taken from the SA ID number and checked (the ID has a check digit). Foreign
+  nationals: passport, country, work permit number and expiry (warning 60 days before it runs out).
+- **Tax status:** normal tables · fixed-rate or percentage **tax directive** (IRP3, with number, rate, and valid-from / to, plus the directive PDF) ·
+  not liable (with the reason).
+- **Deductions that change PAYE:** medical aid (scheme, member number, dependants → medical tax credits), pension / provident /
+  retirement annuity contributions, as they're added. None apply on the current slips, but the IRP5 boxes exist (4005, 4001).
+- **IRP5 details:** the address and contact fields above, plus the **nature of person** and other codes the IRP5 needs, filled in from the file.
+  The EMP501 export (roadmap P8) refuses to run while any of these are missing, and says who and what.
+- **ETI:** eligible yes/no with the reason (age from the ID, start date, wage band), worked out automatically and overridable with a reason.
+- Tax numbers, directives and ID numbers are visible to office / owner roles only (§12).
+
 ## 2. The employee screen
 
 A new **👤 Employees** tab (office only). A list with search, filters (team, status, contract type, below-minimum-wage,
@@ -225,6 +246,33 @@ The existing CCMA case folders show why this matters: every termination needs a 
 - **Reports:** headcount by team, starters and leavers this month, contracts expiring, probation ending, people below minimum wage,
   missing documents, loan book (balances), leave liability (days × rate), UI-19s issued.
 
+## 11A. Bulk import (and export)
+
+For the switch-over from Pastel and for large changes (e.g. the annual increase, a new season's intake).
+
+**What can be imported (Excel / CSV, one downloadable template per type):**
+| Import | Typical source |
+|---|---|
+| Employees (details, team, contract type, rate, start date, contact, tax number) | Pastel employee export, the current roster, the HR staff sheet |
+| Photos | A folder or zip of images named by employee code (`A001.jpg`) |
+| Opening leave balances (annual, sick cycle, FRL used) | Pastel leave report at switch-over |
+| Year-to-date figures per IRP5 code | Pastel YTD report at switch-over (roadmap "Switching over safely") |
+| Loans, garnishees, funeral policies (principal, instalment, balance) | Pastel deduction reports, loan register |
+| Rate changes (code, new rate, effective date, reason) | Annual increase / minimum-wage adjustment sheet |
+| Team moves / code changes | A two-column mapping sheet |
+| Bank details | **Allowed only with owner approval of the whole batch** (§3.4); never applied without it |
+
+**How an import works (always the same steps):**
+1. Upload the file. The app maps its columns to fields (and remembers the mapping for next time, e.g. for Pastel's column names).
+2. **Dry run:** every row is checked (SA ID check digit and date of birth, tax number format, required fields, duplicate codes / IDs / phone
+   numbers, rates below minimum wage, dates in the future, team exists). You see a preview: **new · changed (old → new) · unchanged · errors**.
+3. Fix the file or skip rows with errors. Nothing is written until you press **Apply**.
+4. Apply writes everything as **one batch**, with a history line "BULK-IMPORT <file name>" on every changed person, and an **undo** for the whole batch.
+5. A report of what changed is saved with the batch.
+
+**Bulk export:** the same templates the other way (employee list, leave balances, loan book, YTD). Useful for the auditor, SIZA or
+a check in Excel. Exports with ID or bank numbers need the owner role and are logged.
+
 ## 12. Access and privacy (POPIA)
 
 - **Roles:** supervisor (timesheet entry for their team only, no pay figures) · payroll office (everything except approving) ·
@@ -238,6 +286,7 @@ The existing CCMA case folders show why this matters: every termination needs a 
 
 1. **Employee file + migration:** create `employees/{eid}` from the current roster and `st._emp` edits (keeping codes and aliases), and
    make runs read from it (the roster copy becomes a snapshot). History tab. Team move and code amend.
+   **Bulk import** (§11A) is built here too, because it's how the Pastel employee data, contacts, tax numbers and photos get in.
 2. **Loans and standing deductions:** move the hard-coded loan ledger in, then load every staff loan, garnishee and funeral-policy deduction on the September final slips as opening entries.
 3. **Bonuses and allowances** (roadmap item 5): Auger bonus type, car and fuel allowances.
 4. **Rates table + minimum wage check** (with the Gazette-proposal routine).
