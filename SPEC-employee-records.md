@@ -273,6 +273,45 @@ For the switch-over from Pastel and for large changes (e.g. the annual increase,
 **Bulk export:** the same templates the other way (employee list, leave balances, loan book, YTD). Useful for the auditor, SIZA or
 a check in Excel. Exports with ID or bank numbers need the owner role and are logged.
 
+## 11B. Training: proof and refreshers
+
+- **Course list** (office-maintained): name, provider, whether it's required and for which teams or roles (e.g. first aid, fire fighting,
+  chemical / spray handling, auger or machine operation, induction, health and safety rep), and the **refresher interval** (e.g. every 2 years, or none).
+- **Training record per person:** course, date, provider, result, **certificate upload (proof)**, attendance register (a group upload linked to
+  everyone who attended), expiry date worked out from the refresher interval.
+- **Refresher tracker:** a dashboard of who is **expired · expiring in 30 / 60 / 90 days · never trained** for each required course, by team.
+  Reminder list before each month's run. Optional link to pay: e.g. a machine-operator bonus type can require that person's operator training to be valid.
+- **Group training:** tick the attendees, upload one register and certificate batch, done for all of them.
+- **Reports:** training matrix (people × courses) for SIZA / health and safety audits, and the training data needed for the annual **Workplace Skills
+  Plan / Annual Training Report** to the SETA (confirm the SETA, format and deadline when building).
+
+## 11C. Employment Equity tracker and reporting
+
+Buzztree employs more than 50 people, so it is likely a **designated employer** under the Employment Equity Act (confirm the current
+thresholds and rules when building: the Act was amended with effect from 2025).
+- **EEA1 self-declaration** per employee (race, gender, disability, nationality), signed and uploaded, with the date. Stored with the tightest access
+  in the app (owner / EE manager only), and never shown on the timesheet, slips or prints.
+- **Occupational level and category** per person (the EE report's levels), kept with history.
+- **Workforce profile** at any date: counts by occupational level × race × gender × disability, foreign nationals separately. Worked out from the employee file.
+- **Movements over the reporting period:** recruitment, promotions, terminations (from the termination wizard, by reason), training (from §11B).
+- **Income differentials** (for the EEA4): remuneration by occupational level and group, from locked pay runs.
+- **EE plan and targets:** the plan's dates and numerical targets per level, progress against them, and the EE committee (members, meeting minutes uploaded).
+- **Reports:** drafts laid out like the **EEA2** (annual report) and **EEA4** (income differentials) for online submission to the Department of
+  Employment and Labour, plus a reminder before the submission window (form layouts and deadlines are taken from the Department when building).
+
+## 11D. Policies and agreements
+
+- **Policy library:** each company policy (disciplinary code, leave, loans, standby, overtime, health and safety, harassment, POPIA, alcohol and drugs,
+  company property, …) as a versioned document with an effective date and a summary. The staff-facing version can have an isiZulu translation.
+- **Acknowledgement:** every employee (or selected teams) acknowledges each policy version by **finger signature in the app**. This is the same
+  sign-on-receipt system already used for payslips, stored with name, code and timestamp. A new version means acknowledging it again. A dashboard shows who hasn't
+  signed yet. Policies can be read out or explained at a team meeting, and the register (group sign-off) uploaded.
+- **Agreements per employee** (types: contract, loan agreement, deduction consent (BCEA s34), overtime agreement, standby agreement, averaging of hours,
+  housing / transport, POPIA consent, training bond, …): generated from templates (§5), signed and uploaded, with start and end dates and status
+  (`draft · signed · expired · terminated`). Loans and deductions **can't start without their signed agreement** (§4).
+- **Expiry and review reminders:** agreements with an end date and policies with a review date appear on the dashboard before they lapse.
+- **Evidence pack:** for an audit or a CCMA case, one export per employee: contract, agreements, policy acknowledgements, warnings, training, termination pack.
+
 ## 12. Access and privacy (POPIA)
 
 - **Roles:** supervisor (timesheet entry for their team only, no pay figures) · payroll office (everything except approving) ·
@@ -293,6 +332,8 @@ a check in Excel. Exports with ID or bank numbers need the owner role and are lo
 5. **Contract types + templates** (merge to PDF, signed copy back in).
 6. **Leave ledger**: opening balances from Pastel, then accrual from locked runs, FRL balance feeding the F default.
 7. **Termination wizard + UI-19 + certificate of service**, then **UIF monthly declaration export**.
+7b. **Policies and agreements** (§11D): policy library and acknowledgement signatures (reuses the payslip signing), agreements per employee.
+7c. **Training records and refresher tracker** (§11B), then **Employment Equity** (§11C): EEA1 declarations, workforce profile, EEA2 / EEA4 drafts.
 8. Roles and Firestore rules tightened alongside step 1 (before any ID or bank data is stored).
 
 **Test for each step:** September 2026's final slips are the answer key. Every standing deduction, allowance and bonus on
