@@ -134,7 +134,7 @@ footer{position:fixed;bottom:0;left:0;right:0;background:#0f2537;color:#9fb6c6;f
     <span class="W">W worked</span><span class="A">A absent (no pay)</span><span class="S">S sick</span><span class="L">L leave</span>
     <span class="R">R rain (no pay)</span><span class="PH">PH pub. holiday (paid)</span><span class="PHW">PHW holiday WORKED</span><span class="P" style="padding:2px 8px;border-radius:4px;font-weight:700">P partial hrs (min 4h)</span><span class="F">F funeral (paid)</span><span class="PW">off / payweekend</span>
   </div>
-  <div style="font-size:12px;color:var(--mut)">Tap a day to cycle W → A → S → L. Tap a public-holiday day to toggle PH ↔ PHW. Grey days are fixed — tick “unlock fixed days” to override. Everything autosaves in this browser; export CSV when a team is done.</div>
+  <div style="font-size:12px;color:var(--mut)">Tap a day to cycle W → A → S → L → F (funeral / family responsibility). Tap a public-holiday day to toggle PH ↔ PHW. Grey days are fixed — tick “unlock fixed days” to override. Everything autosaves in this browser; export CSV when a team is done.</div>
   <div id="list"></div>
 </main>
 <footer><span id="fsave">saved ✓</span><span id="ffile" style="color:#fcd34d">autosave: browser only — link a file!</span><span id="pgFile">File: Timesheet entry</span><span>Decision-support only — Byron confirms &amp; pays</span></footer>
@@ -377,7 +377,13 @@ function runPanel(){
 }
 /* ================= end run config ================= */
 
-const CY=["W","A","S","L"];
+const CY=["W","A","S","L","F"];
+/* F = away for a funeral / family responsibility. Being away and being PAID are different:
+   BCEA family-responsibility leave is 3 paid days a year, so a 6-day funeral can be 3 paid + 3 unpaid.
+   s.frl holds the paid count when the office sets it; otherwise min(F days, 3). */
+const FRL_MAX=3;
+function frlPaid(e){const s=emp(e.c),f=counts(e).F;if(!f)return 0;
+ return(s.frl!==undefined&&s.frl!=="")?Math.max(0,Math.min(+s.frl,f)):Math.min(f,FRL_MAX)}
 let st={};try{st=JSON.parse(localStorage.getItem(KEY)||"{}")}catch(e){st={}}
 let cur="Team A";try{cur=localStorage.getItem(KEY+"-tab")||"Team A"}catch(e){}
 const $=s=>document.querySelector(s);
@@ -391,7 +397,7 @@ function ot2Tot(e){return(+emp(e.c).ot2||0)+otSum(e,"o2")}
 function dpForm(e){const d=DATA.days.find(x=>x.d===window._dp.iso);const s=emp(e.c);const gv=m=>((s[m]||{})[d.d]??"");
  return '<div style="background:#f0fdfa;border:1px solid #2dd4bf;border-radius:8px;padding:10px;margin-top:8px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;font-size:12.5px" data-dpf="1">'
  +'<b>'+d.w+' '+d.lbl+' · '+e.c+'</b>'
- +'<label>Status <select data-dp="st"><option value="">(keep)</option><option value="__def">default</option><option>W</option><option>A</option><option>S</option><option>L</option><option value="F">F funeral (paid)</option></select></label>'
+ +'<label>Status <select data-dp="st"><option value="">(keep)</option><option value="__def">default</option><option>W</option><option>A</option><option>S</option><option>L</option><option value="F">F funeral / family resp.</option></select></label>'
  +'<label>Worked hrs <input type="number" step="0.25" min="0" max="12" data-dp="h" value="'+gv("h")+'" style="width:64px" placeholder="full"> <small>(&lt;4h pays 4h)</small></label>'
  +'<label>OT1.5× <input type="number" step="0.25" min="0" data-dp="o15" value="'+gv("o15")+'" style="width:60px">h</label>'
  +'<label>OT2× <input type="number" step="0.25" min="0" data-dp="o2" value="'+gv("o2")+'" style="width:60px">h</label>'
@@ -421,7 +427,7 @@ const db=document.createElement("button");db.className=cur==="__DED__"?"on":"";d
 const done=EMPS().filter(e=>emp(e.c).done).length;$("#pbar").style.width=(100*done/EMPS().length)+"%";$("#ptxt").textContent=done+" / "+EMPS().length+" employees done"}
 function chipHtml(e){const s=emp(e.c);let ex="";if(ot15Tot(e)||ot2Tot(e))ex+='<span class="chip L">OT'+((ot15Tot(e)||0)+(ot2Tot(e)||0))+'h</span>';if(+s.bpA)ex+='<span class="chip '+(+s.bpA<0?"A":"S")+'">R'+(+s.bpA).toFixed(0)+'</span>';
 if(e.fx)return ex+'<span class="fx">FIXED — salaried</span>';const c=counts(e);let h=ex+'<span class="chip W">'+c.W+'d</span>'+(c.PhP?'<span class="chip L" title="partial days — payable hrs (min-4h rule)">+'+c.PhP+'h</span>':'')+'<span class="chip PH">PH '+(c.PH||c.PHW)+(c.PHW?"·worked":"")+'</span>';
-if(c.S)h+='<span class="chip S">S'+c.S+'</span>';if(c.L)h+='<span class="chip L">L'+c.L+'</span>';if(c.F)h+='<span class="chip L" style="background:#e0e7ff;color:#312e81">F'+c.F+'</span>';if(c.A)h+='<span class="chip A">A'+c.A+'</span>';return h}
+if(c.S)h+='<span class="chip S">S'+c.S+'</span>';if(c.L)h+='<span class="chip L">L'+c.L+'</span>';if(c.F){const fp=frlPaid(e);h+='<span class="chip L" style="background:#e0e7ff;color:#312e81" title="funeral / family responsibility: '+c.F+' away, '+fp+' paid">F'+c.F+(fp<c.F?' · '+fp+' paid':'')+'</span>'}if(c.A)h+='<span class="chip A">A'+c.A+'</span>';return h}
 function matchIcon(e){const s=emp(e.c);if(e.fx||s.tally==="")return"";return(+s.tally===counts(e).W)?"✅":"❌"}
 function edForm(e){const isNew=!e;const teams=[...new Set(DATA.emps.map(x=>x.t))];
  return '<div class="edp" data-eform="'+(isNew?"__new__":e.c)+'" onclick="event.stopPropagation()" style="background:#f0f9ff;border:1px solid #7dd3fc;border-radius:8px;padding:10px;margin:8px 12px;display:grid;gap:6px;font-size:12.5px">'
@@ -443,6 +449,7 @@ if(e.f)h+='<div class="flag'+(e.nopay?" red":"")+'">⚑ '+e.f+'</div>';
 if(editSet.has(e.c))h+=edForm(e);
 h+='<div class="body">'+(e.fx?'<div style="font-size:12.5px;color:var(--mut);padding:6px 0">Salaried — Basic Salary line, no day entry. Use the note for exceptions only.</div>':(gridHtml(e)+((window._dp&&window._dp.c===e.c)?dpForm(e):"")))+
 '<div class="tools">extra OT1.5× <input type="number" step="0.5" min="0" data-ot15="'+e.c+'" value="'+(s.ot15||"")+'" style="width:58px" placeholder="h">h · OT2× <input type="number" step="0.5" min="0" data-ot2="'+e.c+'" value="'+(s.ot2||"")+'" style="width:58px" placeholder="h">h · Back-pay R <input type="number" step="0.01" data-bpa="'+e.c+'" value="'+(s.bpA||"")+'" style="width:84px" placeholder="±0.00"> <input type="text" data-bpw="'+e.c+'" value="'+(s.bpWhy||"").replace(/"/g,"&quot;")+'" placeholder="back-pay reason" style="flex:1;min-width:120px"></div>'+
+((!e.fx&&counts(e).F)?'<div class="tools" style="background:#eef2ff;border-radius:6px;padding:4px 6px">Funeral / family resp.: <b>'+counts(e).F+'</b> day(s) away · paid FRL <input type="number" min="0" max="'+counts(e).F+'" step="1" data-frl="'+e.c+'" value="'+frlPaid(e)+'" style="width:48px"> <small>(BCEA: 3 paid days a year, so check days already used this year; the rest are unpaid)</small></div>':"")+
 '<div class="tools"><input type="text" placeholder="note for Phil (sick note ref, part-day, etc.)" value="'+(s.note||"").replace(/"/g,"&quot;")+'" data-note="'+e.c+'"><button class="mini" data-fp="'+e.c+'">📎 Files</button>'+(e.fx?"":'<button class="mini" data-def="'+e.c+'">↺ defaults</button>')+'</div>'+((FPC===e.c)?filesPanel(e):"")+'</div>';
 card.innerHTML=h;return card}
 function gridHtml(e){let h='<div class="grid"><div class="dow">Mo</div><div class="dow">Tu</div><div class="dow">We</div><div class="dow">Th</div><div class="dow">Fr</div><div class="dow">Sa</div><div class="dow">Su</div>';
@@ -478,15 +485,22 @@ function renderStandby(L){
 function dedGet(c){if(!st._ded)st._ded={};if(!st._ded[c])st._ded[c]={};return st._ded[c]}
 function philRows(){return EMPS().map(e=>{const c=counts(e);const s=emp(e.c);const d=(st._ded||{})[e.c]||{};
  const sx=sbX(e.c);const sd=sx?sbDays(sx):0;const sr=sx?sbRate(sx):"";const stot=sd?(sd*sr):0;
- return {c:e.c,n:e.n,fx:e.fx,days:e.fx?"":c.W,ph:e.fx?"":c.PH,phw:e.fx?"":c.PHW,part:e.fx?"":(c.PhP||""),o15:ot15Tot(e)||"",o2:ot2Tot(e)||"",sick:e.fx?"":(c.S||""),lv:e.fx?"":(c.L||""),fn:e.fx?"":(c.F||""),sd:sd||"",sr:sd?sr:"",stot:sd?stot.toFixed(2):"",bp:s.bpA||"",bpw:s.bpWhy||"",loan:d.l||"",fuel:d.f||"",oth:d.o||"",note:[s.note||"",d.w||""].filter(Boolean).join(" · ")}})}
+ return {c:e.c,n:e.n,fx:e.fx,days:e.fx?"":c.W,ph:e.fx?"":c.PH,phw:e.fx?"":c.PHW,part:e.fx?"":(c.PhP||""),o15:ot15Tot(e)||"",o2:ot2Tot(e)||"",sick:e.fx?"":(c.S||""),lv:e.fx?"":(c.L||""),fn:e.fx?"":(frlPaid(e)||""),sd:sd||"",sr:sd?sr:"",stot:sd?stot.toFixed(2):"",bp:s.bpA||"",bpw:s.bpWhy||"",loan:d.l||"",fuel:d.f||"",oth:d.o||"",
+  note:[s.note||"",d.w||"",(!e.fx&&c.F>frlPaid(e))?("funeral: "+c.F+" days away, "+frlPaid(e)+" paid FRL, "+(c.F-frlPaid(e))+" unpaid"):""].filter(Boolean).join(" · ")}})}
+/* Which document kinds are on file for a person this run. Read from the change log (every upload logs
+   FILE-ATTACH with its kind), so no file data has to be downloaded to check. */
+function docKinds(code){const k={};(st._log||[]).forEach(x=>{if(x.c===code&&x.f==="FILE-ATTACH")k[x.o]=1});return k}
 function philSpecifics(){
- const out={sal:[],alias:[],part:[],sick:[],fun:[],bp:[],ded:[],zero:[]};
+ const out={sal:[],alias:[],part:[],sick:[],fun:[],bp:[],ded:[],zero:[],nodoc:[]};
  EMPS().forEach(e=>{const c=counts(e);const s=emp(e.c);const d=(st._ded||{})[e.c]||{};
   if(e.fx)out.sal.push(e.c);
   if(e.alias)out.alias.push(e.c+" (paper: "+e.alias+")");
   if(c.PhP)out.part.push(e.c+" "+e.n.split(" ")[0]+": "+c.PhP+"h payable (actual "+c.PhA+"h — min-4h rule)");
   if(c.S)out.sick.push(e.c+" "+e.n+": "+c.S+" day"+(c.S>1?"s":""));
-  if(c.F)out.fun.push(e.c+" "+e.n+": "+c.F+" day"+(c.F>1?"s":""));
+  if(c.F){const fp=frlPaid(e);out.fun.push(e.c+" "+e.n+": "+fp+" paid day"+(fp===1?"":"s")+(c.F>fp?" ("+c.F+" away, "+(c.F-fp)+" unpaid)":""))}
+  const dk=docKinds(e.c);
+  if(c.S&&!dk["sick-note"])out.nodoc.push(e.c+" "+e.n+": "+c.S+" sick, no sick note on file");
+  if(c.F&&!dk["funeral-doc"])out.nodoc.push(e.c+" "+e.n+": "+c.F+" funeral, no funeral letter / death certificate on file");
   if(+s.bpA)out.bp.push(e.c+" "+e.n+": R"+(+s.bpA).toFixed(2)+" — "+(s.bpWhy||""));
   const dd=[];if(+d.l)dd.push("loan R"+(+d.l).toFixed(2));if(+d.f)dd.push("fuel R"+(+d.f).toFixed(2));if(+d.o)dd.push("other R"+(+d.o).toFixed(2));
   if(dd.length)out.ded.push(e.c+" "+e.n+": "+dd.join(" + ")+(d.w?" — "+d.w:""));
@@ -495,18 +509,19 @@ function philSpecifics(){
 function renderPhil(L){
  const rows=philRows();const num=k=>rows.reduce((a,r)=>a+(+r[k]||0),0);const sp=philSpecifics();
  let h='<div class="banner noprint">📋 This page IS the deliverable — <b>🖨 Print → Save as PDF (Landscape)</b> and send that to Phil; generated live from the entered data. <button class="mini" id="philCopy" style="background:#0f766e;color:#fff">⧉ Copy for Phil</button> <button class="mini" onclick="window.print()">🖨 Print / Save as PDF</button></div>';
- h+='<div class="prephead"><h2>BUZZTREE (PTY) LTD — AUGUST 2026 PAYRUN · Sage Pastel keying sheet</h2>'
+ h+='<div class="prephead"><h2>BUZZTREE (PTY) LTD — '+(PERIOD?PERIOD.label.toUpperCase():"")+' PAYRUN · Sage Pastel keying sheet</h2>'
   +'<div class="pline">'+PSUBTXT()+'</div>'
   +'<div class="pline">Generated live from the Buzztree timesheet app · '+new Date().toLocaleString()+' · signed in: '+(fbUser?fbUser.email:"—")+' · all entries audit-logged</div>'
   +'<div class="ptots"><span>'+num("days")+' worked days</span><span>'+num("ph")+' PH</span><span>'+num("part")+' partial hrs</span><span>OT1.5 '+num("o15")+'h</span><span>OT2 '+num("o2")+'h</span><span>'+num("sick")+' sick</span><span>'+num("fn")+' funeral</span><span>standby R '+num("stot").toFixed(2)+'</span><span>backpay R '+num("bp").toFixed(2)+'</span><span>deductions R '+(num("loan")+num("fuel")+num("oth")).toFixed(2)+'</span></div></div>';
  h+='<div class="pspec"><b class="h">SPECIFICS FOR THIS RUN</b>'
-  +'<b class="h">Salaried (Basic Salary — no daily wage):</b> '+sp.sal.join(", ")+'. A020 newly confirmed salaried this run.'
+  +'<b class="h">Salaried (Basic Salary — no daily wage):</b> '+sp.sal.join(", ")+'.'
   +(sp.alias.length?'<b class="h">Code changes:</b> '+sp.alias.join("; ")+'.':"")
   +(sp.part.length?'<b class="h">Partial hours (sectoral min-4h):</b> '+sp.part.join(" · "):"")
   +(sp.sick.length?'<b class="h">Paid sick (certificates filed):</b> '+sp.sick.join(" · "):"")
-  +(sp.fun.length?'<b class="h">Paid family-responsibility / funeral (death certificates filed):</b> '+sp.fun.join(" · "):"")
+  +(sp.fun.length?'<b class="h">Family-responsibility / funeral leave:</b> '+sp.fun.join(" · "):"")
+  +(sp.nodoc.length?'<b class="h noprint" style="color:#b45309">⚠ Documents missing (attach via 📎 Files before sending):</b><span class="noprint"> '+sp.nodoc.join(" · ")+'</span>':"")
   +(sp.bp.length?'<b class="h">Back-pay:</b> '+sp.bp.join(" · "):"")
-  +(sp.ded.length?'<b class="h">Deductions:</b> '+sp.ded.join(" · ")+' (A011: cap at 10% of actual gross)':"")
+  +(sp.ded.length?'<b class="h">Deductions:</b> '+sp.ded.join(" · "):"")
   +(sp.zero.length?'<b class="h">Zero pay (no days, no PH):</b> '+sp.zero.join(", "):"")
   +'<b class="h">Standby rates:</b> general R62.65/day (June-corrections basis) · drivers R114.765 — amounts per person in the table.</div>';
  h+='<div class="ptwrap"><table class="ptable"><thead><tr><th>Code</th><th>Employee</th><th>Basis</th><th>Days</th><th>PH</th><th>PHW</th><th>Part hrs</th><th>OT1.5 h</th><th>OT2 h</th><th>Sick</th><th>Leave</th><th>Funeral</th><th>Stby d</th><th>Stby rate</th><th>Stby R</th><th>Backpay R</th><th>Backpay reason</th><th>Loan ded R</th><th>Fuel ded R</th><th>Other ded R</th><th>Note</th></tr></thead><tbody>';
@@ -536,18 +551,18 @@ let FPC=null,FPL=null;
 function filesOpen(code){FPC=code;FPL=null;renderList();if(!FB||!fbUser)return;
  FB.collection("files").where("run","==",RUNID).where("code","==",code).get().then(q=>{FPL=[];q.forEach(d=>FPL.push(Object.assign({id:d.id},d.data(),{data:null,ref:d})));renderList()}).catch(e=>{FPL=[];ffile("files load failed: "+e.code,false);renderList()})}
 function fileView(id){FB.collection("files").doc(id).get().then(d=>{const f=d.data();const bin=atob(f.data);const u8=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u8[i]=bin.charCodeAt(i);const url=URL.createObjectURL(new Blob([u8],{type:f.mime}));window.open(url,"_blank")})}
-function fileUpload(code,kind,file){const e=EMPS().find(x=>x.c===code);const label=code+"_"+(e?e.n.replace(/\s+/g,"-"):"")+"_"+kind;
- const fin=(mime,b64)=>{FB.collection("files").add({run:RUNID,code:code,kind:kind,name:label+"_"+file.name,mime:mime,data:b64,by:fbUser.email,at:new Date().toISOString()})
-  .then(()=>{logEdit(code,"FILE-ATTACH",kind,file.name,"attached via app");save();filesOpen(code)}).catch(err=>alert("Upload failed: "+err.code+" (file too big? keep under ~700KB)"))};
+function fileUpload(code,kind,file,day){const e=EMPS().find(x=>x.c===code);const label=code+"_"+(e?e.n.replace(/\s+/g,"-"):"")+"_"+kind+(day?"_"+day:"");
+ const fin=(mime,b64)=>{FB.collection("files").add({run:RUNID,code:code,kind:kind,day:day||"",name:label+"_"+file.name,mime:mime,data:b64,by:fbUser.email,at:new Date().toISOString()})
+  .then(()=>{logEdit(code,"FILE-ATTACH",kind,file.name,"attached via app"+(day?" for "+day:""));save();filesOpen(code)}).catch(err=>alert("Upload failed: "+err.code+" (file too big? keep under ~700KB)"))};
  if(file.type.startsWith("image/")){const img=new Image();img.onload=()=>{const mx=1400;let w=img.width,h2=img.height;if(Math.max(w,h2)>mx){const k=mx/Math.max(w,h2);w=Math.round(w*k);h2=Math.round(h2*k)}
    const cv=document.createElement("canvas");cv.width=w;cv.height=h2;cv.getContext("2d").drawImage(img,0,0,w,h2);
    const du=cv.toDataURL("image/jpeg",0.72);fin("image/jpeg",du.split(",")[1])};img.src=URL.createObjectURL(file)}
  else{if(file.size>700000){alert("PDF too big ("+Math.round(file.size/1024)+"KB) — keep under 700KB or photograph the page instead");return}
   const r=new FileReader();r.onload=()=>fin(file.type||"application/pdf",String(r.result).split(",")[1]);r.readAsDataURL(file)}}
 function filesPanel(e){let h='<div style="background:#fefce8;border:1px solid #facc15;border-radius:8px;padding:10px;margin-top:8px;font-size:12.5px" data-fpp="1"><b>📎 Files — '+e.c+'</b> (sick notes, signed loan forms; auto-labelled '+e.c+'_Name per filing rule)<br>';
- h+='<div style="display:flex;gap:8px;align-items:center;margin:6px 0"><select id="fp_kind"><option value="sick-note">Sick note</option><option value="loan-doc">Loan document</option><option value="other">Other</option></select><input type="file" id="fp_file" accept="image/*,.pdf" capture="environment"><button class="mini" data-fpclose="1">Close</button></div>';
+ h+='<div style="display:flex;gap:8px;align-items:center;margin:6px 0"><select id="fp_kind"><option value="sick-note">Sick note</option><option value="funeral-doc">Funeral letter / death certificate</option><option value="loan-doc">Loan document</option><option value="other">Other</option></select><select id="fp_day" title="which day this document covers"><option value="">(no specific day)</option>'+DATA.days.filter(d=>{const v=dayVal(e,d);return v==="S"||v==="F"||v==="A"}).map(d=>'<option value="'+d.d+'">'+d.w+" "+d.lbl+" ("+dayVal(e,d)+")</option>").join("")+'</select><input type="file" id="fp_file" accept="image/*,.pdf" capture="environment"><button class="mini" data-fpclose="1">Close</button></div>';
  if(FPL===null)h+='<i>loading…</i>';else if(!FPL.length)h+='<i>no files yet</i>';
- else FPL.forEach(f=>{h+='<div class="frow"><span>'+(f.kind||"")+'</span><a href="#" data-fview="'+f.id+'">'+f.name+'</a><span style="margin-left:auto;color:var(--mut)">'+(f.at||"").slice(0,10)+'</span></div>'});
+ else FPL.forEach(f=>{h+='<div class="frow"><span>'+(f.kind||"")+(f.day?" · "+f.day.slice(8)+"/"+f.day.slice(5,7):"")+'</span><a href="#" data-fview="'+f.id+'">'+f.name+'</a><span style="margin-left:auto;color:var(--mut)">'+(f.at||"").slice(0,10)+'</span></div>'});
  return h+"</div>"}
 function renderDeductions(L){
  let h='<div class="banner">💸 <b>Deductions — '+PLBL()+' run.</b> Loan register: only OPEN loan is <b>A011 R2,000</b> (deduct <b>R438.20</b> this run — 10%-of-gross cap, Staff Loans 8171). E419 CLOSED. Fuel/other: from your records. Everything flows to CSV + write-back, audit-logged. <button class="mini" data-dla011="1" style="background:#0f766e;color:#fff">Load A011 R438.20</button></div>';
@@ -644,7 +659,7 @@ document.addEventListener("click",ev=>{
 document.addEventListener("contextmenu",ev=>{const c=ev.target.closest(".cell:not(.empty)");if(!c)return;ev.preventDefault();
  const e=EMPS().find(x=>x.c===c.dataset.emp);if(!e||e.fx)return;window._dp={c:e.c,iso:c.dataset.day};openSet.add(e.c);renderList()});
 document.addEventListener("change",ev=>{const t=ev.target;
- if(t.id==="fp_file"){const f=t.files[0];if(!f)return;const kind=document.getElementById("fp_kind").value;fileUpload(FPC,kind,f);return}
+ if(t.id==="fp_file"){const f=t.files[0];if(!f)return;const kind=document.getElementById("fp_kind").value,day=(document.getElementById("fp_day")||{}).value||"";fileUpload(FPC,kind,f,day);return}
  if(t.dataset.dl!==undefined){dedGet(t.dataset.dl).l=t.value;save();renderList();return}
  if(t.dataset.df!==undefined){dedGet(t.dataset.df).f=t.value;save();renderList();return}
  if(t.dataset.do!==undefined){dedGet(t.dataset.do).o=t.value;save();renderList();return}
@@ -657,6 +672,8 @@ document.addEventListener("change",ev=>{const t=ev.target;
  if(t.dataset.ot15!==undefined){emp(t.dataset.ot15).ot15=t.value;save();renderTabs()}
  if(t.dataset.ot2!==undefined){emp(t.dataset.ot2).ot2=t.value;save();renderTabs()}
  if(t.dataset.bpa!==undefined){emp(t.dataset.bpa).bpA=t.value;save();renderTabs()}
+ if(t.dataset.frl!==undefined){const c=t.dataset.frl,s=emp(c),old=s.frl===undefined?"auto":s.frl;
+  s.frl=t.value===""?"":String(Math.max(0,Math.round(+t.value)));logEdit(c,"FRL-PAID",old,s.frl,"paid family-responsibility days set in office");save();renderTabs()}
  if(t.dataset.bpw!==undefined){emp(t.dataset.bpw).bpWhy=t.value;save()}
  if(t.id==="unlock")document.body.classList.toggle("unlocked",t.checked);
 });
@@ -737,7 +754,7 @@ document.addEventListener("click",ev=>{
 });
 function rows(){return EMPS().map(e=>{const c=counts(e);const s=emp(e.c);
  const ds=DATA.days.map(d=>{const ph=pHrs(e,d);const s3=emp(e.c);const o=((s3.o15||{})[d.d]?("+OT1.5:"+s3.o15[d.d]+"h"):"")+((s3.o2||{})[d.d]?("+OT2:"+s3.o2[d.d]+"h"):"");return d.lbl.replace(" ","")+"="+(ph!==null?("P"+ph+"h>"+payHrs(ph)+"h"):dayVal(e,d))+o}).join(";");
- return[e.t,e.c,e.n,e.fx?"FIXED":"DAILY",(e.added?"ADDED":(e.ed&&Object.keys(e.ed).length?"EDITED":"")),(e.ed&&e.ed.why)||"",s.tally||"",e.fx?"":c.W,e.fx?"":c.PH,e.fx?"":c.PHW,e.fx?"":c.S,e.fx?"":c.L,e.fx?"":(c.F||""),e.fx?"":c.A,e.fx?"":c.R,e.fx?"":(c.PhA||""),e.fx?"":(c.PhP||""),(ot15Tot(e)||""),(ot2Tot(e)||""),(s.bpA||""),(s.bpWhy||""),(((st._ded||{})[e.c]||{}).l||""),(((st._ded||{})[e.c]||{}).f||""),(((st._ded||{})[e.c]||{}).o||""),(((st._ded||{})[e.c]||{}).w||""),(s.note||""),s.done?"YES":"",sbD(e.c),sbR2(e.c),sbT(e.c),e.fx?"":ds]})}
+ return[e.t,e.c,e.n,e.fx?"FIXED":"DAILY",(e.added?"ADDED":(e.ed&&Object.keys(e.ed).length?"EDITED":"")),(e.ed&&e.ed.why)||"",s.tally||"",e.fx?"":c.W,e.fx?"":c.PH,e.fx?"":c.PHW,e.fx?"":c.S,e.fx?"":c.L,e.fx?"":(frlPaid(e)||""),e.fx?"":(c.A+c.F-frlPaid(e)),e.fx?"":c.R,e.fx?"":(c.PhA||""),e.fx?"":(c.PhP||""),(ot15Tot(e)||""),(ot2Tot(e)||""),(s.bpA||""),(s.bpWhy||""),(((st._ded||{})[e.c]||{}).l||""),(((st._ded||{})[e.c]||{}).f||""),(((st._ded||{})[e.c]||{}).o||""),(((st._ded||{})[e.c]||{}).w||""),(s.note||""),s.done?"YES":"",sbD(e.c),sbR2(e.c),sbT(e.c),e.fx?"":ds]})}
 function sbX(c){return sbList().find(y=>y.c===c)}
 function sbD(c){const x=sbX(c);if(!x)return"";return sbDays(x)||""}
 function sbR2(c){const x=sbX(c);return x?sbRate(x):""}
@@ -769,7 +786,7 @@ if(window.showSaveFilePicker){reconnect()}else{ffile("this browser can't autosav
 lastSnap=JSON.stringify(st);snapUI();cloudInit();
 renderTabs();renderList();
 // ---- Companion-style offline-first (PWA): app shell cached, cold-start works in a dead zone ----
-const APP_VERSION="runs-v17";
+const APP_VERSION="runs-v18";
 if("serviceWorker" in navigator&&location.protocol==="https:"){
  navigator.serviceWorker.register("sw.js").then(reg=>{
   reg.addEventListener("updatefound",()=>{const w=reg.installing;if(!w)return;

@@ -37,7 +37,20 @@ grid and pay day typed into a month config by hand.
 - Show the pay day on the crew's sign-off screen and on the printed calendars.
 - Keep the check that generated grids match paid grids (`_build/verify_days.js`) for every new rule.
 
-## 2. Day codes that match the payslip
+## 2. Day codes that match the payslip (done in runs-v18)
+**Done:**
+- `F` (funeral / family responsibility) is in the tap cycle: W → A → S → L → F.
+- Days away and days paid are separate. Paid FRL defaults to min(F days, 3) (the BCEA yearly allowance) and the office
+  can set it per person (e.g. when days were already used earlier in the year). This is logged as `FRL-PAID`.
+- Exports: the bureau sheet's *Funeral* column and the CSV's *FuneralPaid* column hold **paid** days only. Unpaid funeral days are
+  added to *AbsentNoPay* and explained in the note.
+- 📎 Files has a "Funeral letter / death certificate" type, and a document can be tied to the exact day it covers.
+- The bureau tab warns (on screen only) about sick or funeral days with no document on file.
+- The bureau tab heading follows the live run (it said "AUGUST 2026" every month), and two hardcoded August notes naming employees are gone.
+- `tools/verify_frl.js` checks all of this with the app's own functions.
+- Still open: tracking FRL already used **this year** across runs, so the default knows the real balance. That's part of the P3 leave engine.
+
+**Original notes:**
 **Today:** per-person entry cycles `W · A · S · L`. There's no **F (funeral / family responsibility)**. In
 September, funerals were entered as `A` plus a note, including one person away 6 days with only 3 paid as FRL.
 One sick day never got entered, so that person's calendar and slip disagreed until the owner confirmed the date.
