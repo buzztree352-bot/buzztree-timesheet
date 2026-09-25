@@ -75,6 +75,9 @@ One sick day never got entered, so that person's calendar and slip disagreed unt
 - Flag any person whose slip days ≠ their timesheet days  **before** printing.
 
 ## 4. Standby roster calendar
+Full spec: [SPEC-payslips-and-pay.md §6A](SPEC-payslips-and-pay.md) (fire standby roster by date, call-outs → overtime, 🔥 on the timesheet
+calendar and the printed calendar back page, conflict checks, unit roster prints).
+
 **Today:** standby days and rate are typed per person. The roster itself is a paper page from the supervisor
 that has gone missing before (August's standby query could not be closed without it).
 

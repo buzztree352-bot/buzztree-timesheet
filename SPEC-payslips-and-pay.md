@@ -182,6 +182,40 @@ Every print type:
 - includes the page / sheet list in the print notes,
 - is checked automatically after generating (each slip once, each slip backed by its own calendar, nothing clipped). That's the same check the September tools run.
 
+## 6A. Fire standby roster calendar (joins the timesheet calendar and the payslip print)
+
+**Today:** the ⚡ Standby tab holds a **typed count of days** per person, a rate by class (general / driver) and a group
+(General Standby Units, Proto-General, Drivers, Drivers Prototeam). There are **no dates**. The supervisor's paper roster is the only
+record of which days, and it has gone missing before. In September 2026 five people's standby on the final slips differed from the app
+(17 vs 22 days, 10 vs 15), and nobody could say which days were right.
+
+**Build: standby by date, on the same calendar as the timesheet.**
+- **Roster planner** (office / supervisor): a grid of **units × days** for the pay period (the run's day grid), with each person's name in
+  the unit they're on. Assign people by tap, **copy last week**, or apply a rotation (e.g. one week on, one week off). The plan is published before the period starts.
+- **Actuals:** each day the supervisor confirms who was on standby (**planned vs actual**). Swaps are recorded ("X covered for Y", with a reason).
+  The paper roster photo is attached per week as backup (it replaces "scan the supervisor's roster into `_source\Standby`" as a separate chore).
+- **Call-outs:** when a standby crew is turned out to a fire, record date, start and end time, place / incident note, and who went. The hours flow to
+  that person's day as **overtime** (OT1.5 or OT2 by day type) on the timesheet, and a **fire incident log** is kept for the season
+  (useful for insurers and the fire protection association's records).
+- **Rates:** standby rate per class and day type (weekday / weekend / public holiday, if they differ), dated in the rates table.
+  Someone moving from general to driver mid-month is paid per day at the right class.
+
+**How it joins the timesheet calendar:**
+- On each person's timesheet card, standby days get a **🔥 marker** on the day cell (the day's own code stays W / A / S …, because standby is on top of the day).
+- **Standby days are counted from the roster.** The typed count goes away and `StandbyDays` in every export comes from the actual dates.
+- **Conflict checks** before the run locks: standby on a day the person was **A** (absent), **S** (sick), **L** (leave) or **F** (funeral), two units the same
+  day, or standby on a day they were marked off (PW / NW). Each needs a decision (keep / remove) with a reason.
+
+**How it joins the payslip and the print:**
+- The payslip's standby line shows **quantity = roster days** and rate = class rate. With both classes in a month there are two lines.
+- The **calendar back page** of the 2-up print shows the 🔥 marker and a small "stby" label on each standby day, plus a call-out time where there was one,
+  and the "This matches your payslip" line includes "+ N standby days". So the worker sees exactly which days they were paid standby for.
+- **Roster print types** (added to §6): weekly / monthly **unit roster** on A4 landscape for the notice board and supervisor sign-off, and a
+  **standby register** per unit for the month (days per person × rate = amount) that reconciles to the payslips.
+
+**Tests:** the September 2026 disputes are the first test. Once the actual dates are entered from the paper roster, the app's standby days must
+equal the bureau's final slips (or show which days the bureau didn't pay), for all 39 standby people.
+
 ## 7. Build order and tests
 
 1. **Rates table + pay items** (with their tax / UIF treatment) → 2. **Earnings + UIF** (§3.2–3.3). Test: all September earnings and
