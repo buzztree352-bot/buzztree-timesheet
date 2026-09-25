@@ -215,6 +215,9 @@ def main():
     for pack in sorted(glob.glob(os.path.join(cfg["packs_dir"], "Payslips - Team * FINAL *.pdf"))):
         team = re.search(r"Team (\w) FINAL", pack).group(1)
         src = fitz.open(pack)
+        for pg in src:                # a rotated slip would land sideways, shrunk and clipped on the half-sheet
+            if pg.rotation:
+                pg.set_rotation(0)
         people = []
         for i, pg in enumerate(src):
             L = [l.strip() for l in pg.get_text().splitlines()]

@@ -84,6 +84,7 @@ def main():
         for c in got:
             p, i = best[c]
             out.insert_pdf(fitz.open(p), from_page=i, to_page=i)
+            out[-1].set_rotation(0)   # some bureau batches carry a /Rotate flag; slips are portrait content
             total += S[c]["nett"]
             rep.append(f"  {c:6} {str(S[c]['name'])[:28]:28} nett {money(S[c]['nett']):>10}  <- {os.path.relpath(p, a.payslips)} p{i + 1}")
         out.save(os.path.join(a.out, f"Payslips - Team {team} FINAL {len(got)} slips.pdf"))
