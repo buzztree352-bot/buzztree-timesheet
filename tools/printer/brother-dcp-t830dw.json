@@ -1,0 +1,16 @@
+{
+  "printer": "Brother DCP-T830DW Printer",
+  "driver": "Brother DCP-T830DW Printer",
+  "defaults": {
+    "PaperSize": "A4",
+    "DuplexingMode": "TwoSidedShortEdge",
+    "Color": true
+  },
+  "per_job_for_2up_packs": {
+    "orientation": "Landscape",
+    "scale": "Actual size / 100% (never Fit)",
+    "duplex": "Flip on short edge",
+    "test_first": "Print pages 1-2 only, hold to the light: each slip must sit behind its own calendar"
+  },
+  "why": "Driver shipped with Letter + one-sided. Letter shrinks/shifts the A4 2-up sheets so fronts and backs stop lining up. Set 25/09/2026."
+}
