@@ -8,7 +8,18 @@ instead, so it's the same every month and nobody has to remember it.
 
 ---
 
-## 1. Pay range details that roll over properly every month
+## 1. Pay range details that roll over properly every month (done in runs-v17)
+**Done:**
+- 💾 backup (`_period`) and the file autosave (`period`) carry the run: id, label, start, end, pay day and the full day grid.
+- Restoring a backup from a different month now asks before loading it into the live run.
+- ⚙ Run / month pre-fills the next period (the day after the last run, four weeks, same pay-day gap) and marks
+  the payweekend after the last pay day (Fri–Mon) when you press Generate days. Everything stays editable.
+- The pay day shows on the crew signing screen.
+- `tools/calendars_2up.py` reads the period from the backup. It stops if the month config disagrees with the app.
+- `tools/verify_period.js` runs the app's own date code against August (payweekend as paid) and September
+  (27 Aug → 23 Sep, payweekend 28–31 Aug, 21 working days). Run it before every deploy.
+
+**Original notes:**
 **Today:** ⚙ Run / month sets the period, pay day and day grid (runs-v16). But the **backup JSON only holds
 per-person exceptions, not the grid or the pay day**. So in September the desktop tools had to have the
 grid and pay day typed into a month config by hand.

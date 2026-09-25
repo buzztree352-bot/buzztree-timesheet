@@ -34,9 +34,11 @@ python payslip_match.py ^
 
 ### 2. Month config for the calendars
 Copy `month.example.json` to `<Month>\_calendar-config_<Tag>.json` and fill in:
-- `period_start` / `period_end` / `pay_day`: the same dates as **⚙ Run / month** in the app.
-- `day_defaults`: every non-ordinary day in the grid (`PW`, `PH`, `R`, `NW`). Sundays are automatic.
-  *(The app backup doesn't include the grid yet. Copy it from ⚙ Run / month. Roadmap item 1.)*
+- **Dates come from the app.** From app `runs-v17` on, the 💾 backup and the file autosave carry the run
+  (period, pay day, full day grid), so leave `period_start` / `period_end` / `pay_day` / `day_defaults` **out**.
+  If you do leave them in, they must match the app exactly, or the tool stops and tells you which one is wrong.
+- Only for a backup made before runs-v17 (September 2026 and earlier): fill in `period_start` / `period_end` /
+  `pay_day` and `day_defaults` (every `PW`, `PH`, `R` or `NW` day; Sundays are automatic) by hand.
 - `overrides`: day corrections that never made it into the app (e.g. a sick day confirmed later).
 - `not_required`: people deliberately not printed (management), so the notes say why they're missing.
 - Paths are relative to the month folder: app backup, timebook summary, final summary, FINAL packs, output.

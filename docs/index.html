@@ -180,7 +180,7 @@ const idb=()=>new Promise((res,rej)=>{const r=indexedDB.open("buzz-ts",1);r.onup
 async function idbSet(k,v){const d=await idb();return new Promise((res,rej)=>{const tx=d.transaction("kv","readwrite");tx.objectStore("kv").put(v,k);tx.oncomplete=res;tx.onerror=()=>rej(tx.error)})}
 async function idbGet(k){const d=await idb();return new Promise((res,rej)=>{const rq=d.transaction("kv").objectStore("kv").get(k);rq.onsuccess=()=>res(rq.result);rq.onerror=()=>rej(rq.error)})}
 function ffile(msg,ok){const f=document.getElementById("ffile");if(f){f.textContent=msg;f.style.color=ok?"#86efac":"#fcd34d"}}
-async function writeFile(){if(!fh)return;try{const w=await fh.createWritable();await w.write(JSON.stringify({_ts:st._ts||Date.now(),state:st},null,1));await w.close();ffile("autosave → "+fh.name+" ✓ "+new Date().toLocaleTimeString(),true)}catch(e){ffile("file save FAILED — use Copy backup",false)}}
+async function writeFile(){if(!fh)return;try{const w=await fh.createWritable();await w.write(JSON.stringify({_ts:st._ts||Date.now(),period:periodMeta(),state:st},null,1));await w.close();ffile("autosave → "+fh.name+" ✓ "+new Date().toLocaleTimeString(),true)}catch(e){ffile("file save FAILED — use Copy backup",false)}}
 function queueWrite(){if(!fh)return;clearTimeout(wTimer);wTimer=setTimeout(writeFile,800)}
 async function linkFile(){try{
  fh=await window.showSaveFilePicker({suggestedName:PFILE()+"_Timesheet_AUTOSAVE.json",types:[{description:"JSON",accept:{"application/json":[".json"]}}]});
@@ -233,6 +233,25 @@ function mkDays(start,end){const out=[];const d=new Date(start+"T12:00:00"),e=ne
   out.push({d:isoOf(d),w:WDN[w],lbl:d.getDate()+" "+MNN[d.getMonth()],def:k,lock:DEFW[k].lock,why:DEFW[k].why});
   d.setDate(d.getDate()+1)}
  return out}
+/* The run's own description, written into every backup and autosave so desktop tools
+   (and a restore) know which period, pay day and day grid the entries belong to. */
+function periodMeta(){const p=PERIOD||FALLBACK_PERIOD;
+ return{id:p.id,label:p.label,start:p.start,end:p.end,payday:p.payday,
+  days:(p.days&&p.days.length?p.days:DATA.days).map(x=>({d:x.d,w:x.w,lbl:x.lbl,def:x.def,why:x.why||""}))}}
+function addDays(s,n){const d=new Date(s+"T12:00:00");d.setDate(d.getDate()+n);return isoOf(d)}
+function dayGap(a,b){return Math.round((new Date(b+"T12:00:00")-new Date(a+"T12:00:00"))/864e5)}
+/* Next run suggestion: starts the day after the last one ends, runs four weeks, and keeps
+   the same gap between period end and pay day. Only a suggestion -- the fields stay editable. */
+function nextSuggest(p){if(!p||!p.end)return null;
+ const s=addDays(p.end,1),e=addDays(s,27);
+ const gap=p.payday?Math.max(0,dayGap(p.end,p.payday)):1;
+ return{start:s,end:e,payday:addDays(e,gap)}}
+/* Payweekend: the days after the LAST run's pay day, up to and including the following Monday
+   (Aug: pay Thu 23 Jul -> PW Fri 24 - Mon 27 Jul; Sep: pay Thu 27 Aug -> PW Fri 28 - Mon 31 Aug). */
+function markPW(days,prevPay){if(!prevPay)return[];
+ const pd=new Date(prevPay+"T12:00:00"),toMon=((8-pd.getDay())%7)||7,last=addDays(prevPay,toMon),hit=[];
+ days.forEach(x=>{if(x.d>prevPay&&x.d<=last){x.def="PW";x.lock=DEFW.PW.lock;x.why=DEFW.PW.why;hit.push(x.w+" "+x.lbl)}});
+ return hit}
 function mkLabel(end){const e=new Date(end+"T12:00:00");return MFULL[e.getMonth()]+" "+e.getFullYear()}
 function mkId(end){const e=new Date(end+"T12:00:00");return MNN[e.getMonth()].toLowerCase()+"-"+e.getFullYear()}
 
@@ -280,6 +299,7 @@ function rsPaint(){const g=document.getElementById("rsGrid");if(!g)return;
    +(d.def==="W"?"":'<br><button class="mini" data-rsw="'+i+'" style="background:#334155;color:#fff;padding:0 5px;margin-top:1px">\u270e</button>')+'</div>'});
  h+='</div>';
  const wd=SETUP.days.filter(x=>x.def==="W").length,ph=SETUP.days.filter(x=>x.def==="PH").length;
+ if(SETUP.pwNote)h+='<div style="margin-top:7px;font-size:11.5px;color:#fcd34d">'+SETUP.pwNote+'</div>';
  h+='<div style="margin-top:9px;font-size:12.5px;color:#e2e8f0"><b>'+wd+'</b> working days \u00b7 <b>'+ph+'</b> public holiday(s) \u00b7 '+SETUP.days.length+' days in the period</div>';
  g.innerHTML=h}
 
@@ -287,7 +307,8 @@ function runPanel(){
  if(!fbUser){alert("Sign in first \u2014 the run config lives in the cloud so every phone gets the same one.");return}
  const old=document.getElementById("runOv");if(old)old.remove();
  const p=PERIOD||FALLBACK_PERIOD;
- SETUP={days:[]};
+ SETUP={days:[],pwNote:""};
+ const nx=nextSuggest(p)||{start:"",end:"",payday:""};
  const ov=document.createElement("div");ov.id="runOv";ov.className="noprint";
  ov.style.cssText="position:fixed;inset:0;background:rgba(6,17,28,.9);z-index:300;overflow:auto;padding:18px";
  const inp="background:#0b1b2b;color:#e2e8f0;border:1px solid #1e3a52;border-radius:5px;padding:5px 7px;font-size:13px";
@@ -297,10 +318,11 @@ function runPanel(){
   +'<h2 style="margin:0 0 3px;font-size:17px">Run / month setup</h2>'
   +'<div style="font-size:12px;color:#94a3b8;margin-bottom:12px">Live run: <b style="color:#fff">'+p.label+'</b> \u00b7 '+dmy(p.start)+' \u2192 '+dmy(p.end)+' \u00b7 pay '+dmy(p.payday)+'</div>'
   +'<div style="font-size:13px;font-weight:700;margin-bottom:6px">Start a new month</div>'
+  +'<div style="font-size:11.5px;color:#fcd34d;margin-bottom:6px">Dates below are a suggestion (day after '+p.label+' ends, four weeks, same pay-day gap). Check them against the pay calendar before generating.</div>'
   +'<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:11px">'
-  +'<label style="font-size:11.5px;color:#94a3b8">Period starts<br><input type="date" id="rsS" style="'+inp+'"></label>'
-  +'<label style="font-size:11.5px;color:#94a3b8">Period ends<br><input type="date" id="rsE" style="'+inp+'"></label>'
-  +'<label style="font-size:11.5px;color:#94a3b8">Pay day<br><input type="date" id="rsP" style="'+inp+'"></label>'
+  +'<label style="font-size:11.5px;color:#94a3b8">Period starts<br><input type="date" id="rsS" value="'+nx.start+'" style="'+inp+'"></label>'
+  +'<label style="font-size:11.5px;color:#94a3b8">Period ends<br><input type="date" id="rsE" value="'+nx.end+'" style="'+inp+'"></label>'
+  +'<label style="font-size:11.5px;color:#94a3b8">Pay day<br><input type="date" id="rsP" value="'+nx.payday+'" style="'+inp+'"></label>'
   +'<button class="btn" id="rsGen" style="background:#0f766e">Generate days</button></div>'
   +'<div id="rsGrid"></div>'
   +'<div style="margin-top:13px;display:flex;gap:10px;flex-wrap:wrap;align-items:center">'
@@ -319,7 +341,10 @@ function runPanel(){
   const s=document.getElementById("rsS").value,e=document.getElementById("rsE").value;
   if(!s||!e){alert("Pick the start and end dates first.");return}
   if(e<s){alert("The end date is before the start date.");return}
-  SETUP.days=mkDays(s,e);rsPaint()};
+  SETUP.days=mkDays(s,e);
+  const pw=(p.payday&&p.payday<e)?markPW(SETUP.days,p.payday):[];
+  SETUP.pwNote=pw.length?"Payweekend after "+p.label+"'s pay day ("+dmy(p.payday)+") marked PW: "+pw.join(", ")+". Tap to change.":"";
+  rsPaint()};
  document.getElementById("rsGo").onclick=()=>{
   const id=document.getElementById("rsSel").value;
   const t=PERIODS.filter(x=>x.id===id)[0];if(!t){alert("That run isn\'t saved yet.");return}
@@ -341,14 +366,14 @@ function runPanel(){
   if(!SETUP.days.length){alert("Press Generate days first, then set any holidays or no-pay days.");return}
   const np={id:mkId(e),label:mkLabel(e),start:s,end:e,payday:pd,days:SETUP.days,by:fbUser.email,at:new Date().toISOString()};
   const clash=PERIODS.filter(x=>x.id===np.id)[0];
-  if(clash&&!confirm("A run called \""+np.label+"\" already exists ("+dmy(clash.start)+" \u2192 "+dmy(clash.end)+").\\n\\nOverwrite its dates and day grid? Entries already captured are kept."))return;
+  if(clash&&!confirm("A run called \""+np.label+"\" already exists ("+dmy(clash.start)+" \u2192 "+dmy(clash.end)+").\n\nOverwrite its dates and day grid? Entries already captured are kept."))return;
   const wd=SETUP.days.filter(x=>x.def==="W").length;
-  if(!confirm(np.label+"\\n"+dmy(s)+" \u2192 "+dmy(e)+"\\nPay "+dmy(pd)+"\\n"+wd+" working days\\n\\nMake this the live run for every device?"))return;
+  if(!confirm(np.label+"\n"+dmy(s)+" \u2192 "+dmy(e)+"\nPay "+dmy(pd)+"\n"+wd+" working days\n\nMake this the live run for every device?"))return;
   const btn=document.getElementById("rsSave");btn.disabled=true;btn.textContent="saving\u2026";
   savePeriod(np,document.getElementById("rsCopy").checked?p.id:null)
    .then(()=>{applyPeriod(np);ov.remove();ffile(np.label+" is now the live run \u2713",true);
-     alert(np.label+" is live.\\n\\nEvery signed-in device picks it up on next load. August stays exactly as it is.")})
-   .catch(err=>{btn.disabled=false;btn.textContent="Save & make this the live run";alert("Save failed: "+err.code+"\\n\\nNothing was changed.")})};
+     alert(np.label+" is live.\n\nEvery signed-in device picks it up on next load. Earlier months stay exactly as they are.")})
+   .catch(err=>{btn.disabled=false;btn.textContent="Save & make this the live run";alert("Save failed: "+err.code+"\n\nNothing was changed.")})};
 }
 /* ================= end run config ================= */
 
@@ -573,7 +598,7 @@ function sigRegisterView(L){
 function renderReceipts(L){
  if(window._sigprint){sigRegisterView(L);return}
  const HOLD={"F502":1,"F515":1,"D317":1,"A038":1};
- let h='<div class="banner">✍ <b>Payslip receipts — digital sign-on-receipt.</b> '+(SIGNMODE?'':'<button class="mini" data-sigprint="1" style="background:#0f2537;color:#fff">🖨 Print signed register</button>')+' Hand over the slip, then the worker signs here with a finger. Each signature stores with name, code and timestamp in the same secured store (SIZA acknowledgment of receipt). Paper register stays as backup this month.</div>';
+ let h='<div class="banner">✍ <b>Payslip receipts — digital sign-on-receipt.</b> '+(PERIOD?'<b>'+PERIOD.label+' · pay day '+dmy(PERIOD.payday)+'.</b> ':'')+(SIGNMODE?'':'<button class="mini" data-sigprint="1" style="background:#0f2537;color:#fff">🖨 Print signed register</button>')+' Hand over the slip, then the worker signs here with a finger. Each signature stores with name, code and timestamp in the same secured store (SIZA acknowledgment of receipt). Paper register stays as backup this month.</div>';
  const sig=st._sig||{};let done=0,tot=0;
  [...new Set(EMPS().map(e=>e.t))].forEach(tm=>{
   const rows=EMPS().filter(e=>e.t===tm).filter(e=>{const c=counts(e);return e.fx||c.W>0||c.PH>0||c.S>0||c.F>0});
@@ -712,9 +737,12 @@ const HDR=["Team","Code","Name","Type","Edited","EditReason","PaperTally","DAYS_
 $("#exCsv").onclick=()=>{const csv=[HDR,...rows()].map(r=>r.map(x=>'"'+String(x).replace(/"/g,'""')+'"').join(",")).join("\r\n");
  const a=document.createElement("a");a.href=URL.createObjectURL(new Blob(["﻿"+csv],{type:"text/csv"}));a.download=PFILE()+"_Timesheet_Entry_EXPORT_"+new Date().toISOString().slice(0,10)+".csv";a.click()};
 $("#exCopy").onclick=()=>{const t=[HDR.slice(0,14),...rows().map(r=>r.slice(0,14))].map(r=>r.join("\t")).join("\n");navigator.clipboard.writeText(t).then(()=>alert("Summary copied — paste into Excel/chat"))};
-$("#exJson").onclick=()=>{const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([JSON.stringify(st)],{type:"application/json"}));a.download=PFILE()+"_timesheet_backup.json";a.click()};
+$("#exJson").onclick=()=>{const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([JSON.stringify(Object.assign({},st,{_period:periodMeta()}))],{type:"application/json"}));a.download=PFILE()+"_timesheet_backup.json";a.click()};
 $("#imJson").onclick=()=>$("#jfile").click();
-$("#jfile").onchange=ev=>{const f=ev.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{st=JSON.parse(r.result);save();renderTabs();renderList()}catch(e){alert("Not a valid backup")}};r.readAsText(f)};
+$("#jfile").onchange=ev=>{const f=ev.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{let j;try{j=JSON.parse(r.result)}catch(e){alert("Not a valid backup");return}
+ const bp=j._period;delete j._period;
+ if(bp&&PERIOD&&bp.id!==PERIOD.id&&!confirm("This backup is for "+bp.label+" ("+dmy(bp.start)+" → "+dmy(bp.end)+"),\nbut the live run is "+PERIOD.label+".\n\nLoad it into "+PERIOD.label+" anyway?"))return;
+ st=j;save();renderTabs();renderList()};r.readAsText(f)};
 $("#reset").onclick=()=>{if(confirm("Wipe ALL entered days/tallies/notes for "+PLBL()+"?")){st={};save();renderTabs();renderList()}};
 function undoAct(){if(!undoStack.length)return;redoStack.push(JSON.stringify(st));st=JSON.parse(undoStack.pop());lastSnap=JSON.stringify(st);save(true);renderTabs();renderList()}
 function redoAct(){if(!redoStack.length)return;undoStack.push(JSON.stringify(st));st=JSON.parse(redoStack.pop());lastSnap=JSON.stringify(st);save(true);renderTabs();renderList()}
@@ -732,7 +760,7 @@ if(window.showSaveFilePicker){reconnect()}else{ffile("this browser can't autosav
 lastSnap=JSON.stringify(st);snapUI();cloudInit();
 renderTabs();renderList();
 // ---- Companion-style offline-first (PWA): app shell cached, cold-start works in a dead zone ----
-const APP_VERSION="runs-v16";
+const APP_VERSION="runs-v17";
 if("serviceWorker" in navigator&&location.protocol==="https:"){
  navigator.serviceWorker.register("sw.js").then(reg=>{
   reg.addEventListener("updatefound",()=>{const w=reg.installing;if(!w)return;

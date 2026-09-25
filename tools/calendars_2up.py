@@ -50,6 +50,27 @@ def load(cfg_path):
     return cfg
 
 
+def period_from_backup(raw):
+    """App runs-v17+ writes the run into the file: 💾 backup -> {..entries.., "_period": {...}},
+    file autosave -> {"_ts", "period": {...}, "state": {...}}. Older files have entries only."""
+    if isinstance(raw.get("state"), dict):
+        return raw["state"], raw.get("period")
+    entries = {k: v for k, v in raw.items() if k != "_period"}
+    return entries, raw.get("_period")
+
+
+def apply_period(cfg, p):
+    """The app's run is the source of truth. The month config may still hold dates, but they must agree."""
+    from_app = {"period_start": p["start"], "period_end": p["end"], "pay_day": p["payday"],
+                "day_defaults": {x["d"]: x["def"] for x in p.get("days", []) if x["def"] not in ("W", "SUN")}}
+    clash = [k for k, v in from_app.items() if cfg.get(k) not in (None, {}, v)]
+    if clash:
+        sys.exit(f"Month config disagrees with the app's run '{p.get('label')}' on {clash}. "
+                 "Fix it in the app (Run / month) or remove those keys from the config.")
+    cfg.update(from_app)
+    print(f"Period from the app backup: {p.get('label')} {p['start']} -> {p['end']}, pay day {p['payday']}")
+
+
 def read_final(path):
     ws = openpyxl.load_workbook(path, data_only=True).active
     rows = list(ws.iter_rows(values_only=True))
@@ -68,6 +89,7 @@ def read_timebook(path):
 
 
 def build_grid(cfg, code, backup, timebook):
+    # Sundays inside a payweekend come from the app as PW (as in August); SUN only when the grid has no entry.
     days = [d(cfg["period_start"]) + dt.timedelta(i)
             for i in range((d(cfg["period_end"]) - d(cfg["period_start"])).days + 1)]
     exc = backup.get(code, {}).get("d", {})
@@ -76,7 +98,7 @@ def build_grid(cfg, code, backup, timebook):
     grid = {}
     for x in days:
         k = x.isoformat()
-        base = "SUN" if x.weekday() == 6 else tmpl.get(k, "W")
+        base = tmpl.get(k) or ("SUN" if x.weekday() == 6 else "W")
         # locked days (as in the app) ignore app entries; a manual override always wins
         grid[x] = ovr.get(k) or (base if base in ("SUN", "PW", "R", "NW") else exc.get(k, base))
     fun = int((timebook.get(code) or {}).get("Funeral") or 0)
@@ -164,7 +186,13 @@ def main():
     a = ap.parse_args()
     cfg, co = load(a.month), json.load(open(a.company, encoding="utf-8"))
     tag = cfg["tag"]
-    backup = json.load(open(cfg["backup"], encoding="utf-8"))
+    raw = json.load(open(cfg["backup"], encoding="utf-8"))
+    backup, period = period_from_backup(raw)
+    if period:
+        apply_period(cfg, period)
+    missing = [k for k in ("period_start", "period_end", "pay_day") if not cfg.get(k)]
+    if missing:
+        sys.exit(f"Backup has no period (made before app runs-v17) and the month config is missing {missing}")
     timebook = read_timebook(cfg["timebook_summary"])
     FIN = read_final(cfg["final_summary"])
     os.makedirs(cfg["out_dir"], exist_ok=True)
