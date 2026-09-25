@@ -1,10 +1,15 @@
-# Roadmap: moving the end-of-month work into the app
+# Roadmap: Buzztree runs its own payroll
 
-Written 25/09/2026 after the September 2026 print & issue run. Everything below was done by hand
-or with the desktop tools in [`tools/`](tools/README.md) that month. The goal is to do it in the app
-instead, so it's the same every month and nobody has to remember it.
+**The goal (set 25/09/2026):** every step of the South African payroll is done in this app, so Buzztree
+no longer outsources payroll to a bureau running Pastel. Timesheets → pay calculation → payslips →
+bank payment → SARS / UIF / COIDA submissions → year-end certificates, all in-house.
 
-**Privacy rule stays:** this repo is public. Names, codes, rates and pay only ever live in Firestore behind sign-in.
+Items 1–7 below came from the September 2026 print & issue run: work done by hand or with the desktop
+tools in [`tools/`](tools/README.md). Section **P** is the payroll engine that replaces Pastel.
+
+**Privacy rule stays:** this repo is public. Names, codes, ID and tax numbers, bank details, rates and pay
+only ever live in Firestore behind sign-in. Nothing employee-specific is written into the code.
+*(Still to move out: a staff-loan ledger seeded in `docs/index.html` (LED) with one employee's code and amounts.)*
 
 ---
 
@@ -91,9 +96,99 @@ flip). Print, then cut in half. Half the paper.
 
 **Build:** per-person issue status: `printed · held back · reprint needed · signed for`. Tie it to the
 distribution/sign register, so the register only lists slips that were actually issued.
+**Started in runs-v17:** "hold" is now per run, set in the office view with a reason (`st._hold`), logged in
+the change log, and shown on the signing screen. It used to be a hardcoded August list.
+
+---
+
+## P. The payroll engine: replacing Pastel
+
+Everything the bureau does today, step by step, in the order a pay run happens. Each step says what the
+app must hold, what it must work out, and what it must produce.
+
+**Ground rule for every number:** statutory figures change, mostly on 1 March (start of the tax year).
+PAYE tables, rebates, thresholds, the UIF ceiling, the National Minimum Wage and ETI bands are **loaded from
+the official source each year into a dated rates table, never typed into the code**. Each pay run records
+which rates table it used, so an old month can always be recalculated exactly as it was paid.
+
+### P1. Employee master (replaces the Pastel employee file)
+- Code, name, team, designation, ID number, tax number, start date (and end date), date of birth (for age-based
+  rebates and ETI eligibility), pay basis (daily / salaried), rate and rate history with effective dates.
+- Bank details with **proof on file and a change log**. Bank-detail change requests arrive by photo and WhatsApp
+  today, so they are a fraud risk: require two-person approval before a change goes into a payment file.
+- Standing deductions with the **written consent** on file (funeral policy, staff loans, garnishee orders): BCEA s34.
+- Leave balances carried from Pastel on the switch-over date (annual, sick-cycle start and days used, FRL used this year).
+- Privacy: this is POPIA personal information. Firestore only, signed-in office users only, access logged.
+
+### P2. Time and attendance → pay inputs (mostly built)
+- Days worked, absent, sick, leave, funeral/FRL, public holidays (worked / not worked), rain and no-work days,
+  partial hours, overtime at 1.5×, Sunday and public-holiday work, standby days × rate, bonuses, back-pay.
+- **Minimum-wage check** on every person, every run: effective hourly rate ≥ the National Minimum Wage in the
+  rates table. Block the run if anyone is under.
+
+### P3. Leave engine (BCEA)
+- Annual leave (21 consecutive days a year, or 1 day per 17 days worked), sick leave (30 days in a 36-month cycle;
+  1 day per 26 days worked in the first 6 months), family responsibility leave (3 days a year, for qualifying
+  employees). Paid / unpaid split, balances on the payslip ("Leave days due"), sick-note required after the BCEA limits.
+
+### P4. Gross-to-net calculation
+- **Earnings:** daily wage / basic salary, standby, overtime, Sunday / public-holiday pay, paid leave, bonuses,
+  allowances (car, fuel: taxable portion per SARS rules), back-pay.
+- **PAYE:** SARS monthly tax tables with annual equivalent, primary/secondary/tertiary rebates by age, taxable
+  allowance inclusion rates, and bonus / irregular-payment treatment.
+- **UIF:** 1% employee + 1% employer, capped at the ceiling in the rates table.
+- **SDL:** 1% employer contribution (Buzztree's payroll is over the R500,000 a year threshold).
+- **ETI** (Employment Tax Incentive): eligibility (age, wage band, months employed, hours ratio), calculated per
+  person and **claimed against PAYE** on the EMP201.
+- **Deductions** in legal priority order: PAYE, UIF, then consented deductions (funeral policy, loans), and
+  garnishee orders per the court order. A cap check so nobody's net goes below what the law or the order allows.
+- **Test oracle:** every past month's bureau payslips are the answer key. The engine must reproduce them **to the
+  cent** before it replaces them. (September 2026's 97 matched FINAL slips are the first test set.)
+
+### P5. Payslips (BCEA s33 content)
+- Employer name and address, employee name, code and occupation, period, pay day, ordinary and overtime hours,
+  rates, every earning and deduction itemised, net pay, leave balances, UIF registration number, employer contributions.
+- Generated by the app. This replaces the bureau's PDFs, the matching step (item 3) and the v1/v2 correction loop.
+  Then the 2-up slip + calendar print (item 6), the signing register and the hold list (item 7) run on the app's own slips.
+
+### P6. Paying people
+- A bank payment file in the bank's import format (today: the "FINAL for bank load" spreadsheet), totals checked
+  against the net pay of the run, plus a proof-of-payment filed against the run.
+- Payments are only released after the run is locked (no edits after lock without an audit entry).
+
+### P7. Monthly statutory submissions
+- **EMP201** to SARS (PAYE + UIF + SDL, less ETI): figures and payment reference produced by the app, submitted on
+  eFiling, due by the 7th of the following month.
+- **UIF monthly declaration** (uFiling) of employees and remuneration.
+- Payroll journal for the books: gross, each deduction, employer contributions, net, per cost centre / team.
+
+### P8. Twice-yearly and annual
+- **EMP501** reconciliations (interim and annual) with **IRP5 / IT3(a)** certificates for every employee, in the SARS
+  import format (e@syFile), reconciled to the twelve EMP201s.
+- **COIDA** return of earnings to the Compensation Fund.
+- Tax-year roll-over on 1 March: new rates table, new tax-year numbering, leave-cycle roll-over.
+
+### P9. Starters and leavers
+- New starter: master record, contract on file, tax number, first pay pro-rated.
+- Leaver: final pay (leave pay-out, notice pay), **UI-19** and certificate of service, IRP5 for the part-year.
+  (There's already a "UI19 for Dismissals" folder in each month's `_source`.)
+
+### P10. Audit, records and access
+- Every change logged (who, when, old → new, why): the `_log` already does this for the timesheet side.
+- Keep records 5 years (SARS) / 3 years (BCEA minimum). SIZA audit pack exportable per month.
+- Roles: entry (supervisors) · payroll (office) · approve and pay (owner). Nobody both edits pay and releases payment alone.
+
+### Switching over safely
+1. Build P1 + P4, then recalculate **past** months and match the bureau's slips to the cent (P4 test oracle).
+2. **Parallel run for at least 2–3 months:** the app calculates, the bureau still pays; every difference explained.
+3. Switch at a tax-year or EMP501 boundary if possible (e.g. 1 March), so no reconciliation period is split
+   between two systems. Carry leave balances and year-to-date figures across on that date.
+4. Only then drop the bureau. Keep read-only access to the old Pastel reports for the retention period.
 
 ---
 
 ### Order to build in
-1 (period in backup) → 2 (F code, FRL) → 5 (bonuses) → 4 (standby calendar) → 3 (payslip import) → 6 (print view) → 7.
-Items 1, 2 and 5 cut out most of the September v2 corrections. Items 3 and 6 replace the desktop tools.
+1 (period in backup, **done**) → 2 (F code, FRL) → 5 (bonuses) → 4 (standby calendar) → P1 (employee master)
+→ P4 (gross-to-net, tested against past slips) → P3 (leave) → P5 (app payslips) → 6 (print view) → 7 (issue tracking)
+→ P6 (bank file) → P7 (EMP201 / UIF) → parallel run → P8 / P9 → switch off the bureau.
+Item 3 (importing the bureau's payslips) is only needed until P5 exists. Use it to build the P4 test set.

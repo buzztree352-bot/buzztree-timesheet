@@ -597,7 +597,9 @@ function sigRegisterView(L){
  const dv=document.createElement("div");dv.innerHTML=h;L.appendChild(dv);}
 function renderReceipts(L){
  if(window._sigprint){sigRegisterView(L);return}
- const HOLD={"F502":1,"F515":1,"D317":1,"A038":1};
+ /* Slips on hold live in THIS run's state (st._hold = {code: reason}), set from the office view.
+    Never hardcode codes here: the file is public and a hold only applies to the month it was set in. */
+ const HOLD=st._hold||{},hEsc=t=>String(t).replace(/&/g,"&amp;").replace(/</g,"&lt;");
  let h='<div class="banner">✍ <b>Payslip receipts — digital sign-on-receipt.</b> '+(PERIOD?'<b>'+PERIOD.label+' · pay day '+dmy(PERIOD.payday)+'.</b> ':'')+(SIGNMODE?'':'<button class="mini" data-sigprint="1" style="background:#0f2537;color:#fff">🖨 Print signed register</button>')+' Hand over the slip, then the worker signs here with a finger. Each signature stores with name, code and timestamp in the same secured store (SIZA acknowledgment of receipt). Paper register stays as backup this month.</div>';
  const sig=st._sig||{};let done=0,tot=0;
  [...new Set(EMPS().map(e=>e.t))].forEach(tm=>{
@@ -606,7 +608,8 @@ function renderReceipts(L){
   h+='<div class="sbg">'+tm+'</div>';
   rows.forEach(e=>{tot++;const s=sig[e.c];if(s)done++;
    h+='<div class="frow"><span class="code">'+e.c+'</span><span class="name">'+e.n+'</span>'
-    +(HOLD[e.c]&&!s?'<span style="color:var(--s);font-size:12px">slip reissuing — sign on batch 3</span>':"")
+    +(HOLD[e.c]&&!s?'<span style="color:var(--s);font-size:12px">⏸ on hold — '+hEsc(HOLD[e.c])+'</span>':"")
+    +(!SIGNMODE&&!s?' <button class="mini" data-hold="'+e.c+'" style="background:#334155;color:#fff">'+(HOLD[e.c]?"▶ release":"⏸ hold")+'</button>':"")
     +(s?'<span style="color:#0f766e;font-weight:700">✓ signed '+new Date(s.at).toLocaleTimeString()+'</span>'+(s.fid?' <a href="#" data-fview="'+s.fid+'" style="font-size:12px">view</a>':"")
        :'<button class="mini" style="margin-left:auto;background:#0f2537;color:#fff" data-sig="'+e.c+'">✍ Sign</button>')
     +'</div>';
@@ -667,6 +670,12 @@ document.addEventListener("click",ev=>{
      const m={};q.forEach(d=>{const f=d.data();m[f.code]="data:image/png;base64,"+f.data});
      window._sigimgs=m;window._sigprint=true;renderList()}).catch(e=>alert("Could not load signatures: "+e.code));return}
  if(ev.target.closest("[data-sigback]")){window._sigprint=false;renderList();return}
+ const hb=ev.target.closest("[data-hold]");
+ if(hb){const c=hb.dataset.hold;if(!st._hold)st._hold={};
+  if(st._hold[c]){logEdit(c,"SLIP-RELEASE",st._hold[c],"","released for signing");delete st._hold[c]}
+  else{const r=prompt("Why is "+c+"'s slip on hold? This shows on the signing screen for "+PLBL()+" only.","slip being reissued");
+   if(!r)return;st._hold[c]=r;logEdit(c,"SLIP-HOLD","",r,r)}
+  save();renderList();return}
  const sgb=ev.target.closest("[data-sig]");if(sgb){SIGC=sgb.dataset.sig;sigDrawn=false;renderList();return}
  if(ev.target.closest("[data-sigcancel]")){SIGC=null;renderList();return}
  if(ev.target.closest("[data-sigclear]")){const cv=document.getElementById("sigC");cv.getContext("2d").clearRect(0,0,cv.width,cv.height);sigDrawn=false;return}
