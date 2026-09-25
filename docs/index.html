@@ -104,6 +104,8 @@ footer{position:fixed;bottom:0;left:0;right:0;background:#0f2537;color:#9fb6c6;f
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
 <script src="config.js"></script>
+<script src="emp-core.js"></script>
+<script src="employees.js"></script>
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#0f2537">
 </head>
@@ -285,9 +287,13 @@ function savePeriod(p,copyFrom){
   .then(()=>{if(!copyFrom||copyFrom===p.id)return null;
     return FB.collection("roster").doc(p.id).get().then(d=>{
       if(d.exists&&(d.data().emps||[]).length)return null;
-      return FB.collection("roster").doc(copyFrom).get().then(s=>{
-        if(!s.exists)return null;const j=s.data();
-        return FB.collection("roster").doc(p.id).set({emps:j.emps||[],standby:j.standby||[],by:fbUser.email,at:new Date().toISOString(),copiedFrom:copyFrom})})})})}
+      /* People come from the permanent employee file when it exists (team moves, new codes, leavers all carried);
+         otherwise last month's roster is copied as before. The standby list is still copied from last month. */
+      const fromFile=window.EMPUI?EMPUI.rosterForNewRun():Promise.resolve(null);
+      return Promise.all([fromFile,FB.collection("roster").doc(copyFrom).get()]).then(([emps,s])=>{
+        if(!emps&&!s.exists)return null;const j=s.exists?s.data():{};
+        return FB.collection("roster").doc(p.id).set({emps:emps||j.emps||[],standby:j.standby||[],by:fbUser.email,at:new Date().toISOString(),
+          copiedFrom:copyFrom,peopleFrom:emps?"employee file":"previous roster"})})})})}
 
 /* ---- the setup panel ---- */
 function rsPaint(){const g=document.getElementById("rsGrid");if(!g)return;
@@ -423,6 +429,7 @@ const lb=document.createElement("button");lb.className=cur==="__LED__"?"on":"";l
 const sgn=Object.keys((st._sig||{})).length;
 const sg=document.createElement("button");sg.className=cur==="__SIG__"?"on":"";sg.innerHTML='✍ Receipts <span class="tb">'+sgn+'</span>';sg.onclick=()=>{cur="__SIG__";try{localStorage.setItem(KEY+"-tab",cur)}catch(e){};renderTabs();renderList()};n.appendChild(sg);
 const db=document.createElement("button");db.className=cur==="__DED__"?"on":"";db.innerHTML='💸 Deductions <span class="tb">'+dn+'</span>';db.onclick=()=>{cur="__DED__";try{localStorage.setItem(KEY+"-tab",cur)}catch(e){};renderTabs();renderList()};n.appendChild(db);
+if(window.EMPUI){const eb=document.createElement("button");eb.className=cur==="__EMP__"?"on":"";eb.innerHTML='👤 Employees';eb.onclick=()=>{cur="__EMP__";try{localStorage.setItem(KEY+"-tab",cur)}catch(e){};renderTabs();renderList()};n.appendChild(eb);}
 const done=EMPS().filter(e=>emp(e.c).done).length;$("#pbar").style.width=(100*done/EMPS().length)+"%";$("#ptxt").textContent=done+" / "+EMPS().length+" employees done"}
 function chipHtml(e){const s=emp(e.c);let ex="";if(ot15Tot(e)||ot2Tot(e))ex+='<span class="chip L">OT'+((ot15Tot(e)||0)+(ot2Tot(e)||0))+'h</span>';if(+s.bpA)ex+='<span class="chip '+(+s.bpA<0?"A":"S")+'">R'+(+s.bpA).toFixed(0)+'</span>';
 if(e.fx)return ex+'<span class="fx">FIXED — salaried</span>';const c=counts(e);let h=ex+'<span class="chip W">'+c.W+'d</span>'+(c.PhP?'<span class="chip L" title="partial days — payable hrs (min-4h rule)">+'+c.PhP+'h</span>':'')+'<span class="chip PH">PH '+(c.PH||c.PHW)+(c.PHW?"·worked":"")+'</span>';
@@ -641,6 +648,7 @@ function renderList(){const L=$("#list");L.innerHTML="";
  if(cur==="__PHIL__"){renderPhil(L);return}
  if(cur==="__LED__"){renderLedger(L);return}
  if(cur==="__DED__"){renderDeductions(L);return}
+ if(cur==="__EMP__"){if(window.EMPUI)EMPUI.render(L);return}
  if(cur==="__SB__"){renderStandby(L);return}EMPS().filter(e=>e.t===cur).forEach(e=>L.appendChild(renderCard(e)));
  const d=document.createElement("div");d.innerHTML=editSet.has("__new__")?edForm(null):'<button class="mini" data-eadd="1" style="margin:6px 0 14px">＋ Add employee to '+cur+'</button>';L.appendChild(d)}
 document.addEventListener("click",ev=>{
@@ -781,7 +789,7 @@ if(window.showSaveFilePicker){reconnect()}else{ffile("this browser can't autosav
 lastSnap=JSON.stringify(st);snapUI();cloudInit();
 renderTabs();renderList();
 // ---- Companion-style offline-first (PWA): app shell cached, cold-start works in a dead zone ----
-const APP_VERSION="runs-v19";
+const APP_VERSION="runs-v20";
 if("serviceWorker" in navigator&&location.protocol==="https:"){
  navigator.serviceWorker.register("sw.js").then(reg=>{
   reg.addEventListener("updatefound",()=>{const w=reg.installing;if(!w)return;

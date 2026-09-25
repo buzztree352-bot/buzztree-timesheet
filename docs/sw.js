@@ -1,7 +1,7 @@
 /* Buzztree Timesheet — service worker (Contractor-Companion pattern: offline-first app shell) */
-const CACHE_VERSION="bt-ts-v5";
+const CACHE_VERSION="bt-ts-v6";
 const CORE=[
-"./","./index.html","./config.js","./manifest.webmanifest",
+"./","./index.html","./config.js","./emp-core.js","./employees.js","./manifest.webmanifest",
 "https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js",
 "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js",
 "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"

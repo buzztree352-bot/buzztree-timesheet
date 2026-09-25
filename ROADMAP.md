@@ -129,6 +129,10 @@ the official source each year into a dated rates table, never typed into the cod
 which rates table it used, so an old month can always be recalculated exactly as it was paid.
 
 ### P1. Employee master (replaces the Pastel employee file)
+**Started in runs-v20:** 👤 Employees tab: permanent file per person (`employees`), history (`emphist`), photos (`empphotos`),
+one-click creation from the live roster, profile (details, contact, tax/ID with checks), team move with effective date (the live month
+follows), code change with old code kept as alias (from the next month), new employee, bulk CSV/Excel import with dry run and undo
+(`empbatches`), export. New months now take their people from the employee file. Tests: `tools/verify_emp_core.js`.
 Full spec: [SPEC-employee-records.md](SPEC-employee-records.md) (employee file, team/code changes, loans, bonuses, contracts
 and templates, minimum-wage updates, leave ledger, termination wizard with UI-19, UIF monthly declarations).
 - Code, name, team, designation, ID number, tax number, start date (and end date), date of birth (for age-based

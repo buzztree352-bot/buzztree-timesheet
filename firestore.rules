@@ -2,7 +2,7 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     match /{col}/{doc} {
-      allow read, write: if col in ['runs','roster','files','ledger']
+      allow read, write: if col in ['runs','roster','files','ledger','employees','emphist','empphotos','empbatches']
         && request.auth != null
         && request.auth.token.email in [
           'buzztree352@gmail.com'
