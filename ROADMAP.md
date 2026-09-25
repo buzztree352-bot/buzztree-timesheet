@@ -9,9 +9,8 @@ tools in [`tools/`](tools/README.md). Section **P** is the payroll engine that r
 
 **Privacy rule stays:** this repo is public. Names, codes, ID and tax numbers, bank details, rates and pay
 only ever live in Firestore behind sign-in. Nothing employee-specific is written into the code.
-*(Still to move out of `docs/index.html`: the staff-loan ledger seed (LED), the August "open corrections" banner at the
-top of the entry screen with named recoveries and refunds, and the "▶ Load open corrections" button's built-in amounts.
-All three belong in the run's own data, like the slip holds now are.)*
+*(Still to move out of `docs/index.html`: the staff-loan ledger seed (LED). It belongs in the run's own data, like the
+slip holds now are. The August "open corrections" banner and its "Load open corrections" button were removed in runs-v19.)*
 
 ---
 
