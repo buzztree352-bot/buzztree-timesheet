@@ -126,6 +126,8 @@ the official source each year into a dated rates table, never typed into the cod
 which rates table it used, so an old month can always be recalculated exactly as it was paid.
 
 ### P1. Employee master (replaces the Pastel employee file)
+Full spec: [SPEC-employee-records.md](SPEC-employee-records.md) (employee file, team/code changes, loans, bonuses, contracts
+and templates, minimum-wage updates, leave ledger, termination wizard with UI-19, UIF monthly declarations).
 - Code, name, team, designation, ID number, tax number, start date (and end date), date of birth (for age-based
   rebates and ETI eligibility), pay basis (daily / salaried), rate and rate history with effective dates.
 - Bank details with **proof on file and a change log**. Bank-detail change requests arrive by photo and WhatsApp
