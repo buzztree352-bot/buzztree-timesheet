@@ -135,7 +135,7 @@ footer{position:fixed;bottom:0;left:0;right:0;background:#0f2537;color:#9fb6c6;f
     <span class="W">W worked</span><span class="A">A absent (no pay)</span><span class="S">S sick</span><span class="L">L leave</span>
     <span class="R">R rain (no pay)</span><span class="PH">PH pub. holiday (paid)</span><span class="PHW">PHW holiday WORKED</span><span class="P" style="padding:2px 8px;border-radius:4px;font-weight:700">P partial hrs (min 4h)</span><span class="F">F funeral / family resp. (3 paid days a year)</span><span class="PW">off / payweekend</span>
   </div>
-  <div style="font-size:12px;color:var(--mut)">Tap a day to cycle W → A → S → L → F (funeral / family responsibility). Tap a public-holiday day to toggle PH ↔ PHW. Grey days are fixed — tick “unlock fixed days” to override. Everything autosaves in this browser; export CSV when a team is done.</div>
+  <div style="font-size:12px;color:var(--mut)">Tap a day to cycle W → A → S → L → F (funeral / family responsibility). Tap a public-holiday day to toggle PH ↔ PHW. Right-click any day to select PH or PHW. Grey days are fixed — tick “unlock fixed days” to override. Everything autosaves in this browser; export CSV when a team is done.</div>
   <div id="list"></div>
 </main>
 <footer><span id="fsave">saved ✓</span><span id="ffile" style="color:#fcd34d">autosave: browser only — link a file!</span><span id="pgFile">File: Timesheet entry</span><span>Decision-support only — Byron confirms &amp; pays</span></footer>
@@ -402,7 +402,7 @@ function ot2Tot(e){return(+emp(e.c).ot2||0)+otSum(e,"o2")}
 function dpForm(e){const d=DATA.days.find(x=>x.d===window._dp.iso);const s=emp(e.c);const gv=m=>((s[m]||{})[d.d]??"");
  return '<div style="background:#f0fdfa;border:1px solid #2dd4bf;border-radius:8px;padding:10px;margin-top:8px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;font-size:12.5px" data-dpf="1">'
  +'<b>'+d.w+' '+d.lbl+' · '+e.c+'</b>'
- +'<label>Status <select data-dp="st"><option value="">(keep)</option><option value="__def">default</option><option>W</option><option>A</option><option>S</option><option>L</option><option value="F">F funeral / family resp.</option></select></label>'
+ +'<label>Status <select data-dp="st"><option value="">(keep)</option><option value="__def">default</option><option>W</option><option>A</option><option>S</option><option>L</option><option value="F">F funeral / family resp.</option><option value="PH">PH public holiday (paid)</option><option value="PHW">PHW public holiday worked</option></select></label>'
  +'<label>Worked hrs <input type="number" step="0.25" min="0" max="12" data-dp="h" value="'+gv("h")+'" style="width:64px" placeholder="full"> <small>(&lt;4h pays 4h)</small></label>'
  +'<label>OT1.5× <input type="number" step="0.25" min="0" data-dp="o15" value="'+gv("o15")+'" style="width:60px">h</label>'
  +'<label>OT2× <input type="number" step="0.25" min="0" data-dp="o2" value="'+gv("o2")+'" style="width:60px">h</label>'
@@ -432,7 +432,7 @@ const db=document.createElement("button");db.className=cur==="__DED__"?"on":"";d
 if(window.EMPUI){const eb=document.createElement("button");eb.className=cur==="__EMP__"?"on":"";eb.innerHTML='👤 Employees';eb.onclick=()=>{cur="__EMP__";try{localStorage.setItem(KEY+"-tab",cur)}catch(e){};renderTabs();renderList()};n.appendChild(eb);}
 const done=EMPS().filter(e=>emp(e.c).done).length;$("#pbar").style.width=(100*done/EMPS().length)+"%";$("#ptxt").textContent=done+" / "+EMPS().length+" employees done"}
 function chipHtml(e){const s=emp(e.c);let ex="";if(ot15Tot(e)||ot2Tot(e))ex+='<span class="chip L">OT'+((ot15Tot(e)||0)+(ot2Tot(e)||0))+'h</span>';if(+s.bpA)ex+='<span class="chip '+(+s.bpA<0?"A":"S")+'">R'+(+s.bpA).toFixed(0)+'</span>';
-if(e.fx)return ex+'<span class="fx">FIXED — salaried</span>';const c=counts(e);let h=ex+'<span class="chip W">'+c.W+'d</span>'+(c.PhP?'<span class="chip L" title="partial days — payable hrs (min-4h rule)">+'+c.PhP+'h</span>':'')+'<span class="chip PH">PH '+(c.PH||c.PHW)+(c.PHW?"·worked":"")+'</span>';
+const c=counts(e);if(e.fx)return ex+'<span class="fx">FIXED — salaried</span>'+(c.PHW?'<span class="chip PHW">PHW '+c.PHW+'</span>':"");let h=ex+'<span class="chip W">'+c.W+'d</span>'+(c.PhP?'<span class="chip L" title="partial days — payable hrs (min-4h rule)">+'+c.PhP+'h</span>':'')+'<span class="chip PH">PH '+(c.PH||c.PHW)+(c.PHW?"·worked":"")+'</span>';
 if(c.S)h+='<span class="chip S">S'+c.S+'</span>';if(c.L)h+='<span class="chip L">L'+c.L+'</span>';if(c.F){const fp=frlPaid(e);h+='<span class="chip L" style="background:#e0e7ff;color:#312e81" title="funeral / family responsibility: '+c.F+' away, '+fp+' paid">F'+c.F+(fp<c.F?' · '+fp+' paid':'')+'</span>'}if(c.A)h+='<span class="chip A">A'+c.A+'</span>';return h}
 function matchIcon(e){const s=emp(e.c);if(e.fx||s.tally==="")return"";return(+s.tally===counts(e).W)?"✅":"❌"}
 function edForm(e){const isNew=!e;const teams=[...new Set(DATA.emps.map(x=>x.t))];
@@ -453,7 +453,7 @@ if(!e.fx)h+='<input class="tally" type="number" min="0" max="24" placeholder="ta
 h+='<button class="mini" data-edit="'+e.c+'" onclick="event.stopPropagation()" title="edit employee">✎</button><label class="dn" onclick="event.stopPropagation()"><input type="checkbox" data-done="'+e.c+'" '+(s.done?"checked":"")+'>done</label></div>';
 if(e.f)h+='<div class="flag'+(e.nopay?" red":"")+'">⚑ '+e.f+'</div>';
 if(editSet.has(e.c))h+=edForm(e);
-h+='<div class="body">'+(e.fx?'<div style="font-size:12.5px;color:var(--mut);padding:6px 0">Salaried — Basic Salary line, no day entry. Use the note for exceptions only.</div>':(gridHtml(e)+((window._dp&&window._dp.c===e.c)?dpForm(e):"")))+
+h+='<div class="body">'+(e.fx?'<div style="font-size:12.5px;color:var(--mut);padding:6px 0">Salaried — Basic Salary remains fixed. Record PHW in the calendar; use the note for other exceptions.</div>':"")+gridHtml(e)+((window._dp&&window._dp.c===e.c)?dpForm(e):"")+
 '<div class="tools">extra OT1.5× <input type="number" step="0.5" min="0" data-ot15="'+e.c+'" value="'+(s.ot15||"")+'" style="width:58px" placeholder="h">h · OT2× <input type="number" step="0.5" min="0" data-ot2="'+e.c+'" value="'+(s.ot2||"")+'" style="width:58px" placeholder="h">h · Back-pay R <input type="number" step="0.01" data-bpa="'+e.c+'" value="'+(s.bpA||"")+'" style="width:84px" placeholder="±0.00"> <input type="text" data-bpw="'+e.c+'" value="'+(s.bpWhy||"").replace(/"/g,"&quot;")+'" placeholder="back-pay reason" style="flex:1;min-width:120px"></div>'+
 ((!e.fx&&counts(e).F)?'<div class="tools" style="background:#eef2ff;border-radius:6px;padding:4px 6px">Funeral / family resp.: <b>'+counts(e).F+'</b> day(s) away · paid FRL <input type="number" min="0" max="'+counts(e).F+'" step="1" data-frl="'+e.c+'" value="'+frlPaid(e)+'" style="width:48px"> <small>(BCEA: 3 paid days a year, so check days already used this year; the rest are unpaid)</small></div>':"")+
 '<div class="tools"><input type="text" placeholder="note for Phil (sick note ref, part-day, etc.)" value="'+(s.note||"").replace(/"/g,"&quot;")+'" data-note="'+e.c+'"><button class="mini" data-fp="'+e.c+'">📎 Files</button>'+(e.fx?"":'<button class="mini" data-def="'+e.c+'">↺ defaults</button>')+'</div>'+((FPC===e.c)?filesPanel(e):"")+'</div>';
@@ -461,7 +461,7 @@ card.innerHTML=h;return card}
 function gridHtml(e){let h='<div class="grid"><div class="dow">Mo</div><div class="dow">Tu</div><div class="dow">We</div><div class="dow">Th</div><div class="dow">Fr</div><div class="dow">Sa</div><div class="dow">Su</div>';
 const pad={"Mo":0,"Tu":1,"We":2,"Th":3,"Fr":4,"Sa":5,"Su":6}[DATA.days[0].w];
 for(let i=0;i<pad;i++)h+='<div class="cell empty"></div>';
-DATA.days.forEach(d=>{const s2=emp(e.c);const hasOT=((s2.o15||{})[d.d]||(s2.o2||{})[d.d]);const ph=pHrs(e,d);const v=(ph!==null)?"P":dayVal(e,d);const st=((ph!==null)?(payHrs(ph)+"h"):v)+(hasOT?"⏱":"");const ttl=(ph!==null)?("Worked "+ph+"h → payable "+payHrs(ph)+"h (min-4h rule). Right-click to change/clear."):(d.why||d.lbl)+" — right-click to enter partial hours";
+DATA.days.forEach(d=>{const s2=emp(e.c);const hasOT=((s2.o15||{})[d.d]||(s2.o2||{})[d.d]);const ph=pHrs(e,d);const v=(ph!==null)?"P":dayVal(e,d);const st=((ph!==null)?(payHrs(ph)+"h"):v)+(hasOT?"⏱":"");const ttl=(ph!==null)?("Worked "+ph+"h → payable "+payHrs(ph)+"h (min-4h rule). Right-click to change/clear."):(d.why||d.lbl)+" — right-click for status (including PHW), partial hours or overtime";
 h+='<div class="cell '+v+(d.lock?" lk":"")+'" data-day="'+d.d+'" data-emp="'+e.c+'" title="'+ttl+'"><small>'+d.w+'</small><b>'+d.lbl+'</b><span class="st">'+st+'</span></div>'});
 return h+"</div>"}
 const openSet=new Set();
@@ -491,7 +491,7 @@ function renderStandby(L){
 function dedGet(c){if(!st._ded)st._ded={};if(!st._ded[c])st._ded[c]={};return st._ded[c]}
 function philRows(){return EMPS().map(e=>{const c=counts(e);const s=emp(e.c);const d=(st._ded||{})[e.c]||{};
  const sx=sbX(e.c);const sd=sx?sbDays(sx):0;const sr=sx?sbRate(sx):"";const stot=sd?(sd*sr):0;
- return {c:e.c,n:e.n,fx:e.fx,days:e.fx?"":c.W,ph:e.fx?"":c.PH,phw:e.fx?"":c.PHW,part:e.fx?"":(c.PhP||""),o15:ot15Tot(e)||"",o2:ot2Tot(e)||"",sick:e.fx?"":(c.S||""),lv:e.fx?"":(c.L||""),fn:e.fx?"":(frlPaid(e)||""),sd:sd||"",sr:sd?sr:"",stot:sd?stot.toFixed(2):"",bp:s.bpA||"",bpw:s.bpWhy||"",loan:d.l||"",fuel:d.f||"",oth:d.o||"",
+ return {c:e.c,n:e.n,fx:e.fx,days:e.fx?"":c.W,ph:e.fx?"":c.PH,phw:c.PHW,part:e.fx?"":(c.PhP||""),o15:ot15Tot(e)||"",o2:ot2Tot(e)||"",sick:e.fx?"":(c.S||""),lv:e.fx?"":(c.L||""),fn:e.fx?"":(frlPaid(e)||""),sd:sd||"",sr:sd?sr:"",stot:sd?stot.toFixed(2):"",bp:s.bpA||"",bpw:s.bpWhy||"",loan:d.l||"",fuel:d.f||"",oth:d.o||"",
   note:[s.note||"",d.w||"",(!e.fx&&c.F>frlPaid(e))?("funeral: "+c.F+" days away, "+frlPaid(e)+" paid FRL, "+(c.F-frlPaid(e))+" unpaid"):""].filter(Boolean).join(" · ")}})}
 /* Which document kinds are on file for a person this run. Read from the change log (every upload logs
    FILE-ATTACH with its kind), so no file data has to be downloaded to check. */
@@ -518,7 +518,7 @@ function renderPhil(L){
  h+='<div class="prephead"><h2>BUZZTREE (PTY) LTD — '+(PERIOD?PERIOD.label.toUpperCase():"")+' PAYRUN · Sage Pastel keying sheet</h2>'
   +'<div class="pline">'+PSUBTXT()+'</div>'
   +'<div class="pline">Generated live from the Buzztree timesheet app · '+new Date().toLocaleString()+' · signed in: '+(fbUser?fbUser.email:"—")+' · all entries audit-logged</div>'
-  +'<div class="ptots"><span>'+num("days")+' worked days</span><span>'+num("ph")+' PH</span><span>'+num("part")+' partial hrs</span><span>OT1.5 '+num("o15")+'h</span><span>OT2 '+num("o2")+'h</span><span>'+num("sick")+' sick</span><span>'+num("fn")+' funeral</span><span>standby R '+num("stot").toFixed(2)+'</span><span>backpay R '+num("bp").toFixed(2)+'</span><span>deductions R '+(num("loan")+num("fuel")+num("oth")).toFixed(2)+'</span></div></div>';
+  +'<div class="ptots"><span>'+num("days")+' worked days</span><span>'+num("ph")+' PH</span><span>'+num("phw")+' PHW</span><span>'+num("part")+' partial hrs</span><span>OT1.5 '+num("o15")+'h</span><span>OT2 '+num("o2")+'h</span><span>'+num("sick")+' sick</span><span>'+num("fn")+' funeral</span><span>standby R '+num("stot").toFixed(2)+'</span><span>backpay R '+num("bp").toFixed(2)+'</span><span>deductions R '+(num("loan")+num("fuel")+num("oth")).toFixed(2)+'</span></div></div>';
  h+='<div class="pspec"><b class="h">SPECIFICS FOR THIS RUN</b>'
   +'<b class="h">Salaried (Basic Salary — no daily wage):</b> '+sp.sal.join(", ")+'.'
   +(sp.alias.length?'<b class="h">Code changes:</b> '+sp.alias.join("; ")+'.':"")
@@ -664,7 +664,7 @@ document.addEventListener("click",ev=>{
  const h=ev.target.closest(".ehead");if(h){const id=h.dataset.open;openSet.has(id)?openSet.delete(id):openSet.add(id);renderList()}
 });
 document.addEventListener("contextmenu",ev=>{const c=ev.target.closest(".cell:not(.empty)");if(!c)return;ev.preventDefault();
- const e=EMPS().find(x=>x.c===c.dataset.emp);if(!e||e.fx)return;window._dp={c:e.c,iso:c.dataset.day};openSet.add(e.c);renderList()});
+ const e=EMPS().find(x=>x.c===c.dataset.emp);if(!e)return;window._dp={c:e.c,iso:c.dataset.day};openSet.add(e.c);renderList()});
 document.addEventListener("change",ev=>{const t=ev.target;
  if(t.id==="fp_file"){const f=t.files[0];if(!f)return;const kind=document.getElementById("fp_kind").value,day=(document.getElementById("fp_day")||{}).value||"";fileUpload(FPC,kind,f,day);return}
  if(t.dataset.dl!==undefined){dedGet(t.dataset.dl).l=t.value;save();renderList();return}
@@ -730,9 +730,11 @@ document.addEventListener("click",ev=>{
  const dpc=ev.target.closest("[data-dpclearday]");if(dpc){const s=emp(dpc.dataset.dpclearday);const iso=window._dp.iso;["h","o15","o2"].forEach(k=>{if(s[k])delete s[k][iso]});logEdit(dpc.dataset.dpclearday,"DAY-EXTRAS",iso,"cleared","right-click day entry");window._dp=null;save();renderTabs();renderList();return}
  const dps=ev.target.closest("[data-dpsave]");if(dps){const code=dps.dataset.dpsave;const s=emp(code);const iso=window._dp.iso;const f=document.querySelector('[data-dpf]');const g=k=>f.querySelector('[data-dp="'+k+'"]').value.trim();
    let bad=false;["h","o15","o2"].forEach(k=>{const v=g(k);if(v!==""&&(isNaN(+v)||+v<0||+v>12))bad=true});if(bad){alert("Hours must be 0–12");return}
+   const requestedStatus=g("st")==="__def"?DATA.days.find(x=>x.d===iso).def:(g("st")||dayVal({c:code},DATA.days.find(x=>x.d===iso)));
+   if((requestedStatus==="PH"||requestedStatus==="PHW")&&g("h")!==""){alert("PH and PHW are whole-day statuses. Clear Worked hrs before saving; record overtime in the OT fields.");return}
    ["h","o15","o2"].forEach(k=>{const v=g(k);if(!s[k])s[k]={};if(v===""){delete s[k][iso]}else{s[k][iso]=+v}});
    const stv=g("st");if(stv==="__def"){delete s.d[iso]}else if(stv){s.d[iso]=stv}
-   const dd=DATA.days.find(x=>x.d===iso);logEdit(code,"DAY-EXTRAS",dd.lbl,"worked="+(g("h")||"full")+"h OT1.5="+(g("o15")||0)+"h OT2="+(g("o2")||0)+"h","right-click day entry (min-4h rule applies)");
+   const dd=DATA.days.find(x=>x.d===iso);logEdit(code,"DAY-EXTRAS",dd.lbl,"status="+requestedStatus+" worked="+(g("h")||"full")+"h OT1.5="+(g("o15")||0)+"h OT2="+(g("o2")||0)+"h","right-click day entry (min-4h rule applies)");
    window._dp=null;save();renderTabs();renderList();return}
  const sb=ev.target.closest("[data-esave]");if(sb){
    const id=sb.dataset.esave;const form=document.querySelector('[data-eform="'+id+'"]');const g=f=>form.querySelector('[data-f="'+f+'"]');
@@ -761,7 +763,7 @@ document.addEventListener("click",ev=>{
 });
 function rows(){return EMPS().map(e=>{const c=counts(e);const s=emp(e.c);
  const ds=DATA.days.map(d=>{const ph=pHrs(e,d);const s3=emp(e.c);const o=((s3.o15||{})[d.d]?("+OT1.5:"+s3.o15[d.d]+"h"):"")+((s3.o2||{})[d.d]?("+OT2:"+s3.o2[d.d]+"h"):"");return d.lbl.replace(" ","")+"="+(ph!==null?("P"+ph+"h>"+payHrs(ph)+"h"):dayVal(e,d))+o}).join(";");
- return[e.t,e.c,e.n,e.fx?"FIXED":"DAILY",(e.added?"ADDED":(e.ed&&Object.keys(e.ed).length?"EDITED":"")),(e.ed&&e.ed.why)||"",s.tally||"",e.fx?"":c.W,e.fx?"":c.PH,e.fx?"":c.PHW,e.fx?"":c.S,e.fx?"":c.L,e.fx?"":(frlPaid(e)||""),e.fx?"":(c.A+c.F-frlPaid(e)),e.fx?"":c.R,e.fx?"":(c.PhA||""),e.fx?"":(c.PhP||""),(ot15Tot(e)||""),(ot2Tot(e)||""),(s.bpA||""),(s.bpWhy||""),(((st._ded||{})[e.c]||{}).l||""),(((st._ded||{})[e.c]||{}).f||""),(((st._ded||{})[e.c]||{}).o||""),(((st._ded||{})[e.c]||{}).w||""),(s.note||""),s.done?"YES":"",sbD(e.c),sbR2(e.c),sbT(e.c),e.fx?"":ds]})}
+ return[e.t,e.c,e.n,e.fx?"FIXED":"DAILY",(e.added?"ADDED":(e.ed&&Object.keys(e.ed).length?"EDITED":"")),(e.ed&&e.ed.why)||"",s.tally||"",e.fx?"":c.W,e.fx?"":c.PH,c.PHW,e.fx?"":c.S,e.fx?"":c.L,e.fx?"":(frlPaid(e)||""),e.fx?"":(c.A+c.F-frlPaid(e)),e.fx?"":c.R,e.fx?"":(c.PhA||""),e.fx?"":(c.PhP||""),(ot15Tot(e)||""),(ot2Tot(e)||""),(s.bpA||""),(s.bpWhy||""),(((st._ded||{})[e.c]||{}).l||""),(((st._ded||{})[e.c]||{}).f||""),(((st._ded||{})[e.c]||{}).o||""),(((st._ded||{})[e.c]||{}).w||""),(s.note||""),s.done?"YES":"",sbD(e.c),sbR2(e.c),sbT(e.c),e.fx?"":ds]})}
 function sbX(c){return sbList().find(y=>y.c===c)}
 function sbD(c){const x=sbX(c);if(!x)return"";return sbDays(x)||""}
 function sbR2(c){const x=sbX(c);return x?sbRate(x):""}
@@ -789,7 +791,7 @@ if(window.showSaveFilePicker){reconnect()}else{ffile("this browser can't autosav
 lastSnap=JSON.stringify(st);snapUI();cloudInit();
 renderTabs();renderList();
 // ---- Companion-style offline-first (PWA): app shell cached, cold-start works in a dead zone ----
-const APP_VERSION="runs-v20";
+const APP_VERSION="runs-v21";
 if("serviceWorker" in navigator&&location.protocol==="https:"){
  navigator.serviceWorker.register("sw.js").then(reg=>{
   reg.addEventListener("updatefound",()=>{const w=reg.installing;if(!w)return;
