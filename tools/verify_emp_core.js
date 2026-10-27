@@ -32,6 +32,14 @@ ok(!E.phone("12345").ok, "short number rejected");
 ok(E.code("b019t").code === "B019T" && !E.code("G001").ok && !E.code("B19").ok, "code format A-F + 3 digits + optional T");
 ok(E.code("C215", "Team F").warn.includes("Team F"), "warning when the code letter doesn't match the team");
 
+ok(E.code(" bt010 ", "Team B").code === "BT010", "BT prefix normalised");
+ok(E.code("BT001", "Team C").ok && !E.code("BT001", "Team C").warn, "BT codes are team-independent");
+ok(["BT01", "BT0001", "BT001T", "BTABC"].every(c => !E.code(c).ok), "malformed BT codes rejected");
+const btPlan = E.importPlan([{ code: "BT001", name: "Test Seasonal Worker", team: "Team B" }],
+  {code: "code", name: "name", team: "team"}, []);
+ok(btPlan.add.length === 1 && !btPlan.errors.length, "BT code accepted by employee import");
+ok(E.toRoster([{code: "BT001", name: "Test Seasonal Worker", team: "Team B", status: "active"}])[0].c === "BT001", "BT code carried to next month's roster");
+
 console.log("C. CSV reading (Excel quirks)");
 let c = E.csv('﻿Code;Name;Team\r\nX101;"Doe; Jane";A\r\n\r\nX102;"Line ""quoted""";B\r\n');
 ok(c.head.join("|") === "Code|Name|Team" && c.rows.length === 2, "BOM, semicolon separator, blank line skipped");

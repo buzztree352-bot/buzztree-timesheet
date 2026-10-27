@@ -53,11 +53,12 @@
   }
 
   // ---------- employee codes ----------
-  // Team letter A-F + 3 digits, optional T (temporary). The letter should match the team.
+  // Team letter A-F + 3 digits, optional T (temporary), or BT + 3 digits.
+  // BT codes are team-independent; legacy team letters should match the team.
   function code(raw, team) {
     const s = String(raw || "").trim().toUpperCase();
-    if (!/^[A-F]\d{3}T?$/.test(s)) return { ok: false, msg: "Code must be a team letter A–F, 3 digits, optional T (e.g. B019 or B019T)" };
-    const warn = team && /^Team [A-F]$/.test(team) && team.slice(-1) !== s[0]
+    if (!/^(?:[A-F]\d{3}T?|BT\d{3})$/.test(s)) return { ok: false, msg: "Code must be A–F + 3 digits + optional T, or BT + 3 digits (e.g. B019T or BT001)" };
+    const warn = !s.startsWith("BT") && team && /^Team [A-F]$/.test(team) && team.slice(-1) !== s[0]
       ? "Code starts with " + s[0] + " but the team is " + team : "";
     return { ok: true, code: s, warn: warn, msg: "" };
   }
