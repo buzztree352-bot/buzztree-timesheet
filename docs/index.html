@@ -436,7 +436,7 @@ const c=counts(e);if(e.fx)return ex+'<span class="fx">FIXED — salaried</span>'
 if(c.S)h+='<span class="chip S">S'+c.S+'</span>';if(c.L)h+='<span class="chip L">L'+c.L+'</span>';if(c.F){const fp=frlPaid(e);h+='<span class="chip L" style="background:#e0e7ff;color:#312e81" title="funeral / family responsibility: '+c.F+' away, '+fp+' paid">F'+c.F+(fp<c.F?' · '+fp+' paid':'')+'</span>'}if(c.A)h+='<span class="chip A">A'+c.A+'</span>';return h}
 function matchIcon(e){const s=emp(e.c);if(e.fx||s.tally==="")return"";return(+s.tally===counts(e).W)?"✅":"❌"}
 function edForm(e){const isNew=!e;const teams=[...new Set(DATA.emps.map(x=>x.t))];
- return '<div class="edp" data-eform="'+(isNew?"__new__":e.c)+'" onclick="event.stopPropagation()" style="background:#f0f9ff;border:1px solid #7dd3fc;border-radius:8px;padding:10px;margin:8px 12px;display:grid;gap:6px;font-size:12.5px">'
+ return '<div class="edp" data-eform="'+(isNew?"__new__":e.c)+'" style="background:#f0f9ff;border:1px solid #7dd3fc;border-radius:8px;padding:10px;margin:8px 12px;display:grid;gap:6px;font-size:12.5px">'
  +'<b>'+(isNew?"Add employee":"Edit "+e.c+" — code itself can\'t change (match key)")+'</b>'
  +(isNew?'<label>Code <input data-f="c" style="width:90px" placeholder="e.g. B019T"></label>':"")
  +'<label>Name <input data-f="n" value="'+(isNew?"":String(e.n).replace(/"/g,"&quot;"))+'" style="width:min(260px,90%)"></label>'
@@ -471,7 +471,7 @@ function sbDays(x){const s=(st._sb||{})[x.c];return(s&&s.d!==undefined&&s.d!==""
 function liveName(c,fall){const e=EMPS().find(x=>x.c===c)||DATA.emps.find(x=>x.c===c);return e?e.n:fall}
 function sbList(){const extra=Object.keys(st._sb||{}).filter(c=>st._sb[c].added&&!DATA.standby.some(x=>x.c===c)).map(c=>({c:c,n:liveName(c,c),r:+st._sb[c].r||62.65,asg:"Added during entry",julyDays:0}));return DATA.standby.concat(extra)}
 function renderStandby(L){
- let h='<div class="banner">⚡ <b>Standby days — '+PLBL()+' period.</b> General rate normalised <b>R60.8255 → R62.65</b> (Byron 26-Aug, per June corrections pack); Drivers R114.765. Rates editable per person. “Jul” column = last month\'s days for reference. D301: standby built into salary — leave 0.</div>';
+ let h='<div class="banner">⚡ <b>Standby — '+PLBL()+'</b>. Enter this period’s days and the agreed rate for each employee. Totals are calculated from the values below; verify any salary-inclusive arrangements before entering days.</div>';
  const list=sbList();const q=(window._sbq||"").toLowerCase();
  const groups=[...new Set(list.map(x=>x.asg))];
  h+='<input type="text" id="sbq" placeholder="filter name / code…" value="'+(window._sbq||"")+'" style="padding:6px 10px;border:1px solid var(--line);border-radius:6px;width:min(280px,100%);margin:4px 0">';
@@ -480,10 +480,10 @@ function renderStandby(L){
   h+='<div class="sbg">'+g+'</div>';
   rows.forEach(x=>{const d=sbDays(x),r=sbRate(x),tot=d*r;if(d>0){gt+=tot;gd+=d;gn++}
    const missing=!EMPS().some(e=>e.c===x.c);
-   h+='<div class="sbrow"><span class="code">'+x.c+'</span><span class="name">'+liveName(x.c,x.n)+(missing?' <b style="color:var(--a)">⚠ not on run</b>':"")+'</span><span class="sbref">Jul: '+(x.julyDays||0)+'d</span>'
+   h+='<div class="sbrow"><span class="code">'+x.c+'</span><span class="name">'+liveName(x.c,x.n)+(missing?' <b style="color:var(--a)">⚠ not on run</b>':"")+'</span>'
     +'R <input type="number" step="0.0001" data-sbr="'+x.c+'" value="'+r+'" title="rate/day"> × <input type="number" min="0" max="35" data-sbd="'+x.c+'" value="'+(d||"")+'" placeholder="days"><span class="tot">'+(d?("R "+tot.toFixed(2)):"—")+'</span></div>'});
  });
- h+='<div style="margin:10px 0"><button class="mini" data-sbadd="1">＋ Add person to standby</button> <button class="mini" data-sbjuly="1" style="background:#4338ca;color:#fff">⟳ Prefill July days (only blanks)</button></div>';
+ h+='<div style="margin:10px 0"><button class="mini" data-sbadd="1">＋ Add person to standby</button></div>';
  h+='<div class="sbtotal"><span>'+gn+' people</span><span>'+gd+' standby days</span><span style="margin-left:auto">TOTAL R '+gt.toFixed(2)+'</span></div>';
  const d=document.createElement("div");d.innerHTML=h;L.appendChild(d);
  const qi=d.querySelector("#sbq");qi.oninput=()=>{window._sbq=qi.value;const pos=qi.selectionStart;renderList();const q2=document.querySelector("#sbq");if(q2){q2.focus();q2.setSelectionRange(pos,pos)}};
@@ -523,7 +523,7 @@ function renderPhil(L){
   +'<b class="h">Salaried (Basic Salary — no daily wage):</b> '+sp.sal.join(", ")+'.'
   +(sp.alias.length?'<b class="h">Code changes:</b> '+sp.alias.join("; ")+'.':"")
   +(sp.part.length?'<b class="h">Partial hours (sectoral min-4h):</b> '+sp.part.join(" · "):"")
-  +(sp.sick.length?'<b class="h">Paid sick (certificates filed):</b> '+sp.sick.join(" · "):"")
+  +(sp.sick.length?'<b class="h">Sick days recorded:</b> '+sp.sick.join(" · "):"")
   +(sp.fun.length?'<b class="h">Family-responsibility / funeral leave:</b> '+sp.fun.join(" · "):"")
   +(sp.nodoc.length?'<b class="h noprint" style="color:#b45309">⚠ Documents missing (attach via 📎 Files before sending):</b><span class="noprint"> '+sp.nodoc.join(" · ")+'</span>':"")
   +(sp.bp.length?'<b class="h">Back-pay:</b> '+sp.bp.join(" · "):"")
@@ -538,21 +538,47 @@ function renderPhil(L){
  dv.querySelector("#philCopy").onclick=()=>{const H=["Code","Employee","Basis","Days","PH","PHW","PartHrs","OT1.5h","OT2h","Sick","Leave","Funeral","StbyDays","StbyRate","StbyR","BackpayR","BackpayReason","LoanDedR","FuelDedR","OtherDedR","Note"];
   const tsv=[H.join("\t")].concat(philRows().map(r=>[r.c,r.n,(r.fx?"SALARIED":"daily"),r.days,r.ph,r.phw,r.part,r.o15,r.o2,r.sick,r.lv,r.fn,r.sd,r.sr,r.stot,r.bp,r.bpw,r.loan,r.fuel,r.oth,r.note].join("\t"))).join("\n");
   navigator.clipboard.writeText(tsv).then(()=>alert("Keying sheet copied — paste into Excel / email for Phil"))};}
-let LED=null;
+let LED=null,ledBusy=false;
+function ledEsc(v){return String(v==null?"":v).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+function ledgerSummary(entries,deductions){
+ const out={};const get=c=>out[c]||(out[c]={advance:0,repaid:0,balance:0,fuel:0,other:0,planned:0});
+ (entries||[]).forEach(x=>{const a=Number(x.a);if(!x.c||!Number.isFinite(a))return;const b=get(x.c);
+ if(x.t==="loan-advance")b.advance+=a;else if(x.t==="loan-deduct")b.repaid+=a;else if(x.t==="fuel-deduct")b.fuel+=a;else b.other+=a;});
+ Object.entries(deductions||{}).forEach(([c,d])=>{if(+d.l)get(c).planned=+d.l});
+ Object.values(out).forEach(b=>{b.balance=Math.round((b.advance-b.repaid)*100)/100});return out;
+}
+function ledgerEntryError(x,codes){if(!codes.includes(x.c))return "Select an employee on this run.";if(!/^\d{4}-\d{2}-\d{2}$/.test(x.d)||isNaN(Date.parse(x.d))||new Date(x.d).toISOString().slice(0,10)!==x.d)return "Enter the transaction date.";if(!Number.isFinite(x.a)||x.a<=0)return "Enter an amount greater than zero.";if(!["loan-advance","loan-deduct","fuel-deduct","other"].includes(x.t))return "Select a transaction type.";if(!x.n.trim())return "Enter the agreement, payslip or receipt reference.";return ""}
+
 function ledLoad(){if(!FB||!fbUser)return;FB.collection("ledger").doc("all").get().then(d=>{LED=d.exists?(d.data().entries||[]):[];renderList()}).catch(e=>{ffile("ledger load failed: "+e.code,false)})}
-function ledSave(){if(!FB||!fbUser)return;FB.collection("ledger").doc("all").set({entries:LED,_ts:Date.now(),by:fbUser.email}).then(()=>ffile("ledger ✓ saved",true)).catch(e=>ffile("ledger save FAILED: "+e.code,false))}
+function ledgerAdd(x){
+ if(ledBusy)return;if(!FB||!fbUser){alert("Sign in before recording a transaction.");return}
+ const error=ledgerEntryError(x,EMPS().map(e=>e.c));if(error){alert(error);return}
+ ledBusy=true;const ref=FB.collection("ledger").doc("all");const at=new Date().toISOString();
+ FB.runTransaction(async tx=>{const doc=await tx.get(ref);const entries=doc.exists?(doc.data().entries||[]):[];
+ if(entries.some(e=>e.c===x.c&&e.d===x.d&&e.t===x.t&&+e.a===x.a&&(e.n||"").trim()===x.n.trim()))throw new Error("This transaction is already recorded.");
+ const next=entries.concat([Object.assign({},x,{by:fbUser.email,at:at})]);tx.set(ref,{entries:next,_ts:Date.now(),by:fbUser.email},{merge:true});return next;
+ }).then(entries=>{LED=entries;ffile("ledger saved",true);renderList()}).catch(e=>alert("Ledger was not changed: "+(e.message||e.code))).finally(()=>{ledBusy=false});
+}
 function renderLedger(L){
- let h='<div class="banner">📒 <b>Loans & Fuel ledger — runs across months.</b> Every advance and deduction with its date. Loan balance = advances − deductions. Seeded from the cockpit Loan Register. This ledger + the run sheet are what Phil gets for loan specifics.'+(LED===null?' <b>Loading…</b>':'')+'</div>';
- if(LED!==null){
-  if(!LED.length)h+='<div class="frow"><button class="mini" data-ledseed="1" style="background:#0f766e;color:#fff">Seed: A011 loan R2,000 advanced 2026-07 + R438.20 deduction Aug</button></div>';
-  h+='<div class="frow" style="flex-wrap:wrap"><b>＋ Add:</b> <input type="date" id="ld_d" style="font-size:12px"> <input id="ld_c" placeholder="CODE" style="width:70px;text-transform:uppercase"> <select id="ld_t"><option value="loan-advance">Loan advance</option><option value="loan-deduct">Loan deduction</option><option value="fuel-deduct">Fuel deduction</option><option value="other">Other</option></select> R <input type="number" id="ld_a" step="0.01" style="width:90px"> <input id="ld_n" placeholder="note / reference" style="flex:1;min-width:140px"> <button class="mini" data-ledadd="1" style="background:#0f766e;color:#fff">Add</button></div>';
-  const bal={};LED.forEach(x=>{if(!bal[x.c])bal[x.c]={adv:0,ded:0,fuel:0};if(x.t==="loan-advance")bal[x.c].adv+=+x.a;if(x.t==="loan-deduct")bal[x.c].ded+=+x.a;if(x.t==="fuel-deduct")bal[x.c].fuel+=+x.a});
-  h+='<div class="sbg">Balances</div>';
-  Object.keys(bal).sort().forEach(c=>{const b=bal[c];h+='<div class="frow"><span class="code">'+c+'</span><span class="name">'+liveName(c,c)+'</span><span>Loan advanced R'+b.adv.toFixed(2)+' · repaid R'+b.ded.toFixed(2)+' · <b>balance R'+(b.adv-b.ded).toFixed(2)+'</b></span><span style="margin-left:auto">Fuel deducted R'+b.fuel.toFixed(2)+'</span></div>'});
-  h+='<div class="sbg">Entries</div>';
-  LED.slice().sort((a,b)=>(b.d||"").localeCompare(a.d||"")).forEach((x,i)=>{h+='<div class="frow"><span style="width:84px">'+(x.d||"?")+'</span><span class="code">'+x.c+'</span><span style="width:110px">'+x.t+'</span><b style="width:90px;text-align:right">R '+(+x.a).toFixed(2)+'</b><span style="flex:1;color:var(--mut)">'+(x.n||"")+'</span></div>'});
+ const esc=ledEsc, money=v=>"R "+Number(v||0).toFixed(2), q=window._lq||"";
+ const names={"loan-advance":"Loan advanced","loan-deduct":"Loan repaid","fuel-deduct":"Fuel deducted","other":"Other adjustment"};
+ let h='<div class="banner"><b>Employee loans and adjustments</b><br>Record actual advances and repayments here. The balance uses recorded transactions only. Deductions entered for '+esc(PLBL())+' are shown separately as planned; they do not count as repaid until you record the actual repayment. No amount is prefilled.</div>';
+ if(LED===null){h+='<p>Loading ledger…</p>'}else{
+ const summary=ledgerSummary(LED,st._ded);
+ h+='<div class="frow noprint"><label>Employee <select id="ld_filter"><option value="">All employees</option>'+Object.keys(summary).sort().map(c=>'<option value="'+esc(c)+'"'+(q===c?' selected':'')+'>'+esc(c+" "+liveName(c,c))+'</option>').join("")+'</select></label> <button class="mini" data-ledded="1">Enter this run’s deductions</button> <button class="mini" onclick="window.print()">Print ledger / PDF</button></div>';
+ h+='<div class="sbg">Recorded balances and current-run plan</div><div style="overflow:auto"><table style="width:100%;border-collapse:collapse"><thead><tr><th>Employee</th><th>Advanced</th><th>Repaid</th><th>Outstanding</th><th>'+esc(PLBL())+' planned loan deduction</th></tr></thead><tbody>';
+ const codes=Object.keys(summary).sort().filter(c=>!q||c===q);
+ if(!codes.length)h+='<tr><td colspan="5">No transactions recorded. Add an advance below to start a loan.</td></tr>';
+ codes.forEach(c=>{const b=summary[c];h+='<tr><td>'+esc(c+" "+liveName(c,c))+'</td><td>'+money(b.advance)+'</td><td>'+money(b.repaid)+'</td><td><b>'+money(b.balance)+'</b>'+(b.balance<0?' — check overpayment':'')+'</td><td>'+money(b.planned)+(b.planned>b.balance?' — exceeds recorded balance':'')+'</td></tr>'});
+ h+='</tbody></table></div><div class="sbg">Transaction history</div>';
+ const running={};
+ const history=LED.map((x,i)=>({x,i})).sort((a,b)=>(a.x.d||"").localeCompare(b.x.d||"")||a.i-b.i).map(({x})=>{running[x.c]=(running[x.c]||0)+(x.t==="loan-advance"?+x.a:x.t==="loan-deduct"?-x.a:0);return {x,b:running[x.c]}});
+ if(!history.length)h+='<p>No entries yet.</p>';
+ history.filter(r=>!q||r.x.c===q).reverse().forEach(({x,b})=>{h+='<div class="frow" style="flex-wrap:wrap"><span>'+esc(x.d||"Date missing")+'</span><b>'+esc(x.c+" "+liveName(x.c,x.c))+'</b><span>'+esc(names[x.t]||x.t)+'</span><b>'+money(x.a)+'</b><span>Loan balance after entry: '+money(b)+'</span><span style="flex-basis:100%;color:var(--mut)">'+esc(x.n||"No reference")+'</span></div>'});
+ h+='<div class="sbg noprint">Record an actual transaction</div><div class="frow noprint" style="flex-wrap:wrap"><label>Date <input type="date" id="ld_d"></label><label>Employee <select id="ld_c"><option value="">Select employee</option>'+EMPS().map(e=>'<option value="'+esc(e.c)+'">'+esc(e.c+" "+e.n)+'</option>').join("")+'</select></label><label>Type <select id="ld_t"><option value="loan-advance">Loan advance</option><option value="loan-deduct">Loan repayment received/deducted</option><option value="fuel-deduct">Fuel deduction</option><option value="other">Other adjustment</option></select></label><label>Amount R <input type="number" min="0.01" step="0.01" id="ld_a" style="width:100px"></label><label style="flex:1">Reference / note <input id="ld_n" placeholder="Agreement, payslip or receipt reference" style="width:100%"></label><button class="mini" data-ledadd="1">Record transaction</button></div>';
  }
- const dv=document.createElement("div");dv.innerHTML=h;L.appendChild(dv);}
+ const dv=document.createElement("div");dv.innerHTML=h;L.appendChild(dv);const f=dv.querySelector("#ld_filter");if(f)f.onchange=()=>{window._lq=f.value;renderList()};
+}
 let FPC=null,FPL=null;
 function filesOpen(code){FPC=code;FPL=null;renderList();if(!FB||!fbUser)return;
  FB.collection("files").where("run","==",RUNID).where("code","==",code).get().then(q=>{FPL=[];q.forEach(d=>FPL.push(Object.assign({id:d.id},d.data(),{data:null,ref:d})));renderList()}).catch(e=>{FPL=[];ffile("files load failed: "+e.code,false);renderList()})}
@@ -571,7 +597,7 @@ function filesPanel(e){let h='<div style="background:#fefce8;border:1px solid #f
  else FPL.forEach(f=>{h+='<div class="frow"><span>'+(f.kind||"")+(f.day?" · "+f.day.slice(8)+"/"+f.day.slice(5,7):"")+'</span><a href="#" data-fview="'+f.id+'">'+f.name+'</a><span style="margin-left:auto;color:var(--mut)">'+(f.at||"").slice(0,10)+'</span></div>'});
  return h+"</div>"}
 function renderDeductions(L){
- let h='<div class="banner">💸 <b>Deductions — '+PLBL()+' run.</b> Loan register: only OPEN loan is <b>A011 R2,000</b> (deduct <b>R438.20</b> this run — 10%-of-gross cap, Staff Loans 8171). E419 CLOSED. Fuel/other: from your records. Everything flows to CSV + write-back, audit-logged. <button class="mini" data-dla011="1" style="background:#0f766e;color:#fff">Load A011 R438.20</button></div>';
+ let h='<div class="banner">💸 <b>Deductions — '+PLBL()+' run.</b> Enter the agreed amount and supporting reference for each employee. These are planned payroll deductions and flow to CSV and For Phil. Recording an actual repayment in the ledger is a separate step; no historical loan amount is prefilled.</div>';
  const q=(window._dq||"").toLowerCase();
  h+='<input type="text" id="dq" placeholder="filter name / code…" value="'+(window._dq||"")+'" style="padding:6px 10px;border:1px solid var(--line);border-radius:6px;width:min(280px,100%);margin:4px 0">';
  let tl=0,tf=0,to=0;
@@ -591,7 +617,7 @@ function renderDeductions(L){
 }
 let SIGC=null,sigDrawn=false;
 function sigPanel(e){return '<div data-sigp="1" style="background:#fff;border:2px solid #0f766e;border-radius:10px;padding:12px;margin:8px 0">'
- +'<b>'+e.c+' '+e.n+'</b><div style="font-size:12px;color:var(--mut);margin:4px 0">I confirm I received my payslip for the period 23/07/2026 – 26/08/2026. · '+new Date().toLocaleString()+'</div>'
+ +'<b>'+e.c+' '+e.n+'</b><div style="font-size:12px;color:var(--mut);margin:4px 0">I confirm I received my payslip for '+ledEsc(PLBL())+' ('+ledEsc(periodMeta().start)+' – '+ledEsc(periodMeta().end)+'). · '+new Date().toLocaleString()+'</div>'
  +'<canvas id="sigC" width="700" height="180" style="width:100%;height:150px;border:1.5px dashed #94a3b8;border-radius:8px;touch-action:none;background:#fff"></canvas>'
  +'<div style="display:flex;gap:8px;margin-top:8px"><button class="mini" data-sigclear="1">Clear</button><button class="mini" style="background:#0f766e;color:#fff" data-sigsave="'+e.c+'">✔ Save signature</button><button class="mini" data-sigcancel="1">Cancel</button></div></div>'}
 function sigWire(){const cv=document.getElementById("sigC");if(!cv)return;const ctx=cv.getContext("2d");ctx.lineWidth=3;ctx.lineCap="round";ctx.strokeStyle="#111";let on=false;
@@ -602,8 +628,8 @@ function sigWire(){const cv=document.getElementById("sigC");if(!cv)return;const 
 function sigRegisterView(L){
  const sig=st._sig||{};const imgs=window._sigimgs||{};
  let h='<div class="banner noprint">🖨 <b>Signed Payslip Distribution Register</b> — generated live with the captured e-signatures. <b>Ctrl+P → Save as PDF / print</b> for the payroll file. <button class="mini" data-sigback="1">← Back to signing</button></div>';
- h+='<div class="sregh"><h2>BUZZTREE (PTY) LTD — PAYSLIP DISTRIBUTION REGISTER · AUGUST 2026</h2>'
-  +'<div>Pay period 23/07/2026 – 26/08/2026 · Pay day Thu 27/08/2026 · Payslips issued BEFORE payment, handed over confidentially (SIZA standing practice). Signatures captured digitally on handover; each stored with employee code, full name and timestamp in the secured payroll store.</div>'
+ h+='<div class="sregh"><h2>BUZZTREE (PTY) LTD — PAYSLIP DISTRIBUTION REGISTER · '+ledEsc(PLBL().toUpperCase())+'</h2>'
+  +'<div>Pay period '+ledEsc(periodMeta().start)+' – '+ledEsc(periodMeta().end)+' · Pay day '+ledEsc(periodMeta().payday)+' · Payslips issued BEFORE payment, handed over confidentially (SIZA standing practice). Signatures captured digitally on handover; each stored with employee code, full name and timestamp in the secured payroll store.</div>'
   +'<div>Generated '+new Date().toLocaleString()+' · signed in: '+(fbUser?fbUser.email:"—")+'</div></div>';
  [...new Set(EMPS().map(e=>e.t))].forEach(tm=>{
   const rows=EMPS().filter(e=>e.t===tm).filter(e=>{const c=counts(e);return e.fx||c.W>0||c.PH>0||c.S>0||c.F>0});
@@ -715,12 +741,8 @@ document.addEventListener("click",ev=>{
  const fpb=ev.target.closest("[data-fp]");if(fpb){filesOpen(fpb.dataset.fp);return}
  if(ev.target.closest("[data-fpclose]")){FPC=null;FPL=null;renderList();return}
  const fv=ev.target.closest("[data-fview]");if(fv){ev.preventDefault();fileView(fv.dataset.fview);return}
- if(ev.target.closest("[data-ledseed]")){LED=[{d:"2026-07-25",c:"A011",t:"loan-advance",a:2000,n:"Staff loan granted Jul 2026 (loan register)",by:fbUser.email,at:new Date().toISOString()},{d:"2026-08-27",c:"A011",t:"loan-deduct",a:438.20,n:"1st repayment — Aug run (10% cap, Staff Loans 8171)",by:fbUser.email,at:new Date().toISOString()}];ledSave();renderList();return}
- if(ev.target.closest("[data-ledadd]")){const g=id=>document.getElementById(id);const c=(g("ld_c").value||"").trim().toUpperCase();const a=parseFloat(g("ld_a").value);
-  if(!c||isNaN(a)){alert("Code and amount required");return}
-  LED.push({d:g("ld_d").value||new Date().toISOString().slice(0,10),c:c,t:g("ld_t").value,a:a,n:g("ld_n").value||"",by:fbUser.email,at:new Date().toISOString()});ledSave();renderList();return}
- if(ev.target.closest("[data-dla011]")){const d=dedGet("A011");if(d.l){alert("A011 already has a loan deduction")}else{d.l=438.20;d.w=((d.w||"")+" staff loan repay of R2,000 (10% cap)").trim();logEdit("A011","LOAN-DEDUCT","0","438.20","loan register: R2,000 granted Jul, first repayment Aug");save();renderTabs();renderList()}return}
- if(ev.target.closest("[data-sbjuly]")){let n=0;DATA.standby.forEach(x=>{const s=sbGet(x.c);if((s.d===undefined||s.d==="")&&x.julyDays>0){s.d=x.julyDays;n++}});logEdit("STANDBY","PREFILL","blanks","July days copied to "+n+" people","Byron prefill — adjust changes by hand");save();renderTabs();renderList();alert("Prefilled "+n+" people from July. Adjust the changed ones, zero the fallen-away.");return}
+ if(ev.target.closest("[data-ledded]")){window._dq=window._lq||"";cur="__DED__";renderTabs();renderList();return}
+ if(ev.target.closest("[data-ledadd]")){const g=id=>document.getElementById(id).value;ledgerAdd({d:g("ld_d"),c:g("ld_c"),t:g("ld_t"),a:Number(g("ld_a")),n:g("ld_n").trim()});return}
  if(ev.target.closest("[data-sbadd]")){const c=(prompt("Employee CODE to add to standby (must be on the run):")||"").trim().toUpperCase();if(!c)return;
    if(!EMPS().some(e=>e.c===c)){alert(c+" is not on the "+PLBL()+" run");return}
    if(sbList().some(x=>x.c===c)){alert(c+" already on the standby list");return}
@@ -791,7 +813,7 @@ if(window.showSaveFilePicker){reconnect()}else{ffile("this browser can't autosav
 lastSnap=JSON.stringify(st);snapUI();cloudInit();
 renderTabs();renderList();
 // ---- Companion-style offline-first (PWA): app shell cached, cold-start works in a dead zone ----
-const APP_VERSION="runs-v21";
+const APP_VERSION="runs-v22";
 if("serviceWorker" in navigator&&location.protocol==="https:"){
  navigator.serviceWorker.register("sw.js").then(reg=>{
   reg.addEventListener("updatefound",()=>{const w=reg.installing;if(!w)return;
