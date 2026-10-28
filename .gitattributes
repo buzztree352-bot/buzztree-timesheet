@@ -1,0 +1,3 @@
+
+# Preserve upstream vendor distribution whitespace.
+docs/vendor/*.mjs -whitespace
