@@ -431,5 +431,5 @@
     }).catch(() => null);
   }
 
-  window.EMPUI = { render, rosterForNewRun, _state: S };
+  window.EMPUI = { render, load, rosterForNewRun, _state: S };
 })();
