@@ -21,7 +21,10 @@ function parse(items){
   }else if(key!=="W"&&vals.length===2&&dailyRate>0&&Math.abs(vals[1]/dailyRate-Math.round(vals[1]/dailyRate))<.002)quantities[key]=Math.round(vals[1]/dailyRate);
   else unknown.push(key);
  }
- return{code:codes.length===1?codes[0]:null,codes,dates,quantities,unknown,salaried:/\bBasic Salary\b/i.test(text),text:normal(text)};
+ const lineValues=label=>{const item=items.find(i=>label.test(i.str.trim()));if(!item)return null;return items.filter(i=>Math.abs(i.transform[5]-item.transform[5])<2.8&&i.transform[4]>item.transform[4]+30).sort((a,b)=>a.transform[4]-b.transform[4]).map(i=>i.str.trim()).filter(x=>/^-?[\d,]+\.\d{2}$/.test(x)).map(money)};
+ const holidays={};for(const [key,rx] of [["PH",/^Public Holiday Days$/i],["PHW",/^Public Holiday Worked$/i]]){const vs=lineValues(rx);if(vs)holidays[key]=vs.length>=3?{quantity:vs[0],rate:vs[1],amount:vs[2]}:{unreadable:true}}
+ const gv=lineValues(/^GROSS EARNINGS$/i),gross=gv&&gv.length===1?gv[0]:null;
+ return{dailyRate,holidays,gross,code:codes.length===1?codes[0]:null,codes,dates,quantities,unknown,salaried:/\bBasic Salary\b/i.test(text),text:normal(text)};
 }
 function check(slip,person,run){
  const errors=[],review=[];
@@ -35,7 +38,7 @@ function check(slip,person,run){
  const counts={};for(const d of person.days)counts[d.status]=(counts[d.status]||0)+1;
  if(!!person.salaried!==!!slip.salaried)review.push("Confirm daily / salaried pay basis");
  if(!person.salaried&&!slip.salaried){
-  if(slip.quantities.W===undefined)review.push("Daily-wage quantity could not be read");
+  if(slip.quantities.W===undefined){if(counts.W)errors.push("Daily wage is missing for "+counts.W+" recorded worked days");else review.push("Daily-wage quantity could not be read")}
   else if(Math.abs(slip.quantities.W-(counts.W||0))>.005)errors.push("Worked days: slip "+slip.quantities.W+" / calendar "+(counts.W||0));
   for(const key of ["S","L"]){
    if(slip.unknown.includes(key))review.push(LABELS[key]+" quantity could not be read");
@@ -43,8 +46,16 @@ function check(slip,person,run){
   }
   if(slip.unknown.includes("F"))review.push("Paid family responsibility quantity could not be read");
   else if(Math.abs((slip.quantities.F||0)-(person.frlPaid||0))>.005)errors.push("Paid funeral days: slip "+(slip.quantities.F||0)+" / timesheet "+(person.frlPaid||0));
-  if(counts.P||counts.PHW)review.push("Confirm partial hours / public holiday work against the slip");
+  if(counts.P)review.push("Confirm partial hours against the slip");
+  if(counts.PHW){
+   const hs=Object.values(slip.holidays||{});
+   if(!slip.dailyRate||hs.some(h=>h.unreadable))review.push("Holiday-work pay could not be calculated; check the amounts");
+   else{const actual=hs.reduce((n,h)=>n+h.amount,0),expected=((counts.PH||0)+2*counts.PHW)*slip.dailyRate;
+    if(Math.abs(actual-expected)>.06)errors.push("Holiday pay: slip R"+actual.toFixed(2)+" / calendar R"+expected.toFixed(2)+" (PHW at twice the daily rate)")}
+  }
  }
+ if(slip.gross===0&&((counts.W||0)+(counts.PHW||0)+(counts.PH||0)+(counts.S||0)+(counts.L||0)>0))errors.push("Zero gross pay despite recorded paid days");
+ if(person.salaried&&counts.PHW){if(!(slip.holidays?.PHW?.amount>0))errors.push("Public-holiday work is recorded but the PHW payment is missing");else review.push("Confirm holiday-work payment against the monthly salary basis")}
  if(person.hold)errors.push("Run hold: "+person.hold);
  return{errors,review,ready:!errors.length&&!review.length};
 }

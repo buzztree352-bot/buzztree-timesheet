@@ -32,3 +32,14 @@ Existing employee, period, funeral, holiday-work and ledger checks also pass.
 
 Source modules: docs/payprint-core.js, docs/payprint-pdf.js, docs/payprint.js.
 Logic tests: node tools/verify_payprint.cjs.
+
+
+## Bulk attendance and replacement batches
+
+In a team tab, choose **Bulk edit attendance**. Select employees (or Select shown), a date range, the current status to replace and the new status. For a worked holiday, choose PH only -> PHW. Preview lists every affected employee/date before Apply. Changed employees return to not done; the existing Undo button restores the entire edit in one step. Employees on hold, dates outside employment and partial-hours days are skipped. Fixed days require the explicit checkbox. Overtime and other payroll amounts are preserved.
+
+Under **Payslips & calendars**, choose **Replace whole batch** before importing a bureau reissue. The app reads the new PDFs first and shows a replacement confirmation, including employees missing from the new batch. Successful replacement clears old PDFs, version choices and manual checks. Cancelled or unreadable replacements keep the existing batch. **Add PDFs** remains available for individual additions. Status and employee filters help find outstanding rows; pack downloads use the selected team.
+
+Checks now hold daily slips with recorded work but no daily wage, zero gross pay against paid days, and readable PHW holiday amounts that do not equal the expected PH plus double-rate PHW total. Salaried PHW without its payment line is held; salary calculation bases still need review. Unreadable amounts are sent for review. This is not a complete tax, deduction, salary or wage-rate audit.
+
+Synthetic checks: `node tools/verify_bulk_save.cjs` and `node tools/verify_bulk_qol.cjs`. The latter needs Playwright; set TEST_BROWSER_CHANNEL=msedge when using an installed Edge instead of bundled Chromium. Tests use fabricated records and never connect to Firebase.
