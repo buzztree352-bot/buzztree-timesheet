@@ -16,7 +16,7 @@ function assess(p,run){
  if(check.errors.length)return{state:"Held",ready:false,details:check.errors.join("; "),r,slip};
  if(r.candidates.length>1&&!r.chosen)return{state:"Choose version",ready:false,details:"More than one payslip was imported. Choose the final copy.",r,slip};
  if(check.review.length&&r.verified!==fingerprint)return{state:"Review",ready:false,details:check.review.join("; "),r,slip,fingerprint};
- return{state:"Ready",ready:true,details:check.review.length?"Manually checked against this calendar":"Employee, month and attendance quantities checked",r,slip,fingerprint};
+ return{state:"Ready",ready:true,details:check.review.length?"Manually checked against this calendar":"Employee code, month and attendance quantities checked",r,slip,fingerprint};
 }
 function download(bytes,name,type){const url=URL.createObjectURL(new Blob([bytes],{type})),a=document.createElement("a");a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),60000)}
 function paint(){
@@ -37,7 +37,7 @@ function paint(){
  +'<button class="mini" id="ppReport">Download match report</button></div>'
  +'<div class="frow" style="margin-top:14px"><label>Show <select id="ppState"><option value="">All statuses</option>'+["Ready","Held","Review","Awaiting PDF","Choose version","Not required"].map(x=>'<option '+(stateFilter===x?"selected":"")+'>'+E(x)+'</option>').join("")+'</select></label><label>Find employee <input id="ppSearch" placeholder="Code or name" value="'+E(search)+'"></label><small>Filters change this list. Downloads include ready people in the selected team.</small></div>'
  +'<div style="overflow:auto;margin-top:16px"><table class="ptable" style="white-space:normal;min-width:720px"><thead><tr><th>Employee</th><th>Calendar</th><th>Payslip / status</th><th>Action</th></tr></thead><tbody>'
- +ps.filter(p=>(!stateFilter||assess(p,s.run).state===stateFilter)&&(!search||(p.code+" "+p.name).toLowerCase().includes(search.toLowerCase()))).map(p=>{const a=assess(p,s.run),cnt={};p.days.forEach(d=>cnt[d.status]=(cnt[d.status]||0)+1);return'<tr><td><b>'+E(p.code)+'</b> '+E(p.name)+'<br><small>'+E(p.team)+'</small></td><td>'+Object.entries(cnt).map(([k,n])=>E(k)+': '+n).join(' · ')+'</td><td><b>'+a.state+'</b><br><small style="white-space:normal">'+E(a.details)+'</small>'
+ +ps.filter(p=>(!stateFilter||assess(p,s.run).state===stateFilter)&&(!search||(p.code+" "+p.name).toLowerCase().includes(search.toLowerCase()))).map(p=>{const a=assess(p,s.run),nc=a.slip?PAYPRINTCORE.compareNames(p.name,a.slip.name,a.slip.nameCandidates):null,cnt={};p.days.forEach(d=>cnt[d.status]=(cnt[d.status]||0)+1);return'<tr><td><b>'+E(p.code)+'</b><br><small>Timesheet:</small> '+E(p.name)+(a.slip?'<br><small>Payslip:</small> '+E(a.slip.name||(a.slip.nameCandidates||[]).join(' / ')||'Name unreadable')+'<br><small style="color:'+(nc.status==='review'?'#b45309':'#475569')+'">'+E(nc.reason)+'</small>':'')+'<br><small>'+E(p.team)+'</small></td><td>'+Object.entries(cnt).map(([k,n])=>E(k)+': '+n).join(' · ')+'</td><td><b>'+a.state+'</b><br><small style="white-space:normal">'+E(a.details)+'</small>'
  +(a.r.candidates.length?'<br><select style="max-width:280px;width:100%" data-pp-version="'+E(p.code)+'"><option value="-1">Choose final copy…</option>'+a.r.candidates.map((x,i)=>'<option value="'+i+'" '+(i===a.r.selected&&(a.r.chosen||a.r.candidates.length===1)?"selected":"")+'>'+E(x.source.name)+' · page '+(x.index+1)+'</option>').join('')+'</select>':'')
  +'</td><td>'+(a.slip?'<button class="mini" data-pp-view="'+E(p.code)+'">Preview slip & calendar</button> ':'')
  +(a.state==="Review"?'<button class="mini" data-pp-verify="'+E(p.code)+'">I checked these details</button> ':'')
@@ -127,8 +127,8 @@ async function preview(code){
  catch(e){message="Preview failed: "+e.message}finally{busy=false;paint()}
 }
 function report(){
- const s=current(),lines=["Employee code,Name,Team,Status,Details,Source,Page"];
- for(const p of s.people){const a=assess(p,s.run);lines.push([p.code,p.name,p.team,a.state,a.details,a.slip?.source.name||"",a.slip?a.slip.index+1:""].map(x=>'"'+String(x).replace(/"/g,'""')+'"').join(","))}
+ const s=current(),lines=["Employee code,Timesheet name,Payslip name,Name check,Team,Status,Details,Source,Page"];
+ for(const p of s.people){const a=assess(p,s.run);lines.push([p.code,p.name,a.slip?.name||(a.slip?.nameCandidates||[]).join(" / "),a.slip?PAYPRINTCORE.compareNames(p.name,a.slip.name,a.slip.nameCandidates).reason:"Awaiting PDF",p.team,a.state,a.details,a.slip?.source.name||"",a.slip?a.slip.index+1:""].map(x=>'"'+String(x).replace(/"/g,'""')+'"').join(","))}
  download("\ufeff"+lines.join("\r\n"),(s.run.label||"Run").replace(/\s/g,"_")+"_Payslip_Match_Report.csv","text/csv;charset=utf-8");
 }
 window.PAYPRINTUI={render(el,getSnapshot){

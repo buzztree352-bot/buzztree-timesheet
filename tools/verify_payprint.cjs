@@ -1,6 +1,6 @@
 const assert=require("node:assert/strict"),C=require("../docs/payprint-core.js");
 const item=(str,x,y)=>({str,transform:[1,0,0,1,x,y]});
-const base=[item("Q123",50,800),item("Demo Worker",150,800),item("24/10/2026",400,800),item("Daily Wage",50,600),item("2.00",260,600),item("100.00",330,600),item("200.00",430,600)];
+const base=[item("Q123",50,800),item("EMPLOYEE NAME",80,800),item("Demo Worker",150,800),item("24/10/2026",400,800),item("Daily Wage",50,600),item("2.00",260,600),item("100.00",330,600),item("200.00",430,600)];
 const person={code:"Q123",name:"Demo Worker",team:"Team Q",salaried:false,days:[{status:"W"},{status:"W"}]};
 const run={payday:"2026-10-29"},slip=C.parse(base);
 assert.equal(C.check(slip,person,run).ready,true);
