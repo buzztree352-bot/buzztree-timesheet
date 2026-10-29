@@ -106,6 +106,8 @@ footer{position:fixed;bottom:0;left:0;right:0;background:#0f2537;color:#9fb6c6;f
 <script src="config.js"></script>
 <script src="emp-core.js"></script>
 <script src="employees.js"></script>
+<script src="bulk-core.js"></script>
+<script src="bulk-attendance.js"></script>
 <script src="payprint-core.js"></script>
 <script src="payprint-pdf.js"></script>
 <script src="payprint.js"></script>
@@ -679,6 +681,25 @@ function printSnapshot(){
  });
  return{user:fbUser&&fbUser.uid,signOnly:SIGNMODE,run:periodMeta(),people};
 }
+function bulkSnapshot(){
+ if(!fbUser||SIGNMODE)throw Error("Sign in to the office view to edit attendance.");
+ return{run:fbUser.uid+"|"+RUNID,team:cur,days:DATA.days.map(d=>({date:d.d,default:d.def,lock:!!d.lock})),
+  people:EMPS().map(e=>{const m=(window.EMPUI?EMPUI._state.list:[]).find(x=>x.code===e.c)||{},s=emp(e.c);
+   return{code:e.c,name:e.n,team:e.t,start:e.start||m.start||"",end:e.end||m.end||"",hold:(st._hold||{})[e.c]||"",done:!!s.done,partial:{...(s.h||{})},values:Object.fromEntries(DATA.days.map(d=>[d.d,dayVal(e,d)]))}})};
+}
+function bulkApply(changes,reason){
+ bulkSnapshot();if(!changes.length||!reason)throw Error("Preview the changes and enter a reason.");
+ for(const c of changes){const s=emp(c.code);s.d[c.date]=c.after;s.done=false;logEdit(c.code,"BULK-DAY",c.date+" "+c.before,c.date+" "+c.after,reason)}
+ save();renderTabs();renderList();document.getElementById("fsave").textContent=changes.length+" day changes saved. Undo restores this edit.";
+}
+function bulkButton(host){
+ if(!fbUser||SIGNMODE||!window.BULKUI)return;
+ const box=document.createElement("div"),b=document.createElement("button");b.className="mini";b.textContent="Bulk edit attendance";b.style.margin="0 0 12px";box.appendChild(b);host.appendChild(box);
+ b.onclick=async()=>{const run=RUNID,t=cur;b.disabled=true;b.textContent="Loading employee dates...";
+  try{if(window.EMPUI&&EMPUI.load)await EMPUI.load();if(RUNID!==run||cur!==t||!box.isConnected)return;box.innerHTML="";BULKUI.render(box,{snapshot:bulkSnapshot,apply:bulkApply});box.querySelector("details").open=true}
+  catch(e){b.disabled=false;b.textContent="Bulk edit attendance";alert(e.message)}
+ };
+}
 function renderList(){const L=$("#list");L.innerHTML="";
  if(SIGNMODE&&rosterLoaded){cur="__SIG__"}
  if(!rosterLoaded){
@@ -691,7 +712,7 @@ function renderList(){const L=$("#list");L.innerHTML="";
  if(cur==="__DED__"){renderDeductions(L);return}
  if(cur==="__EMP__"){if(window.EMPUI)EMPUI.render(L);return}
  if(cur==="__PAYPRINT__"){if(window.PAYPRINTUI&&fbUser&&!SIGNMODE)PAYPRINTUI.render(L,printSnapshot);return}
- if(cur==="__SB__"){renderStandby(L);return}EMPS().filter(e=>e.t===cur).forEach(e=>L.appendChild(renderCard(e)));
+ if(cur==="__SB__"){renderStandby(L);return}bulkButton(L);EMPS().filter(e=>e.t===cur).forEach(e=>L.appendChild(renderCard(e)));
  const d=document.createElement("div");d.innerHTML=editSet.has("__new__")?edForm(null):'<button class="mini" data-eadd="1" style="margin:6px 0 14px">＋ Add employee to '+cur+'</button>';L.appendChild(d)}
 document.addEventListener("click",ev=>{
  const c=ev.target.closest(".cell:not(.empty)");if(c){const e=EMPS().find(x=>x.c===c.dataset.emp);const d=DATA.days.find(x=>x.d===c.dataset.day);
@@ -829,7 +850,7 @@ if(window.showSaveFilePicker){reconnect()}else{ffile("this browser can't autosav
 lastSnap=JSON.stringify(st);snapUI();cloudInit();
 renderTabs();renderList();
 // ---- Companion-style offline-first (PWA): app shell cached, cold-start works in a dead zone ----
-const APP_VERSION="runs-v23-print";
+const APP_VERSION="runs-v24-bulk";
 if("serviceWorker" in navigator&&location.protocol==="https:"){
  navigator.serviceWorker.register("sw.js").then(reg=>{
   reg.addEventListener("updatefound",()=>{const w=reg.installing;if(!w)return;
