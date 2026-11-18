@@ -153,12 +153,12 @@ function renderOverview(host){
  const p=period()||{},ts=teams(),t=totals(ts),done=t[0],total=t[1],left=total-done;
  const ph=(data().days||[]).filter(d=>d&&d.def==="PH");
  const office=!!user()&&!!D.getElementById("holidayB");
- let h='<header class="pw-ov-head"><h2 id="pwOvTitle">'+esc(runLabel())+' overview</h2>'
+ let h='<div class="pw-ov-head"><h2 id="pwOvTitle">'+esc(runLabel())+' overview</h2>'
   +'<p>'+(p.start?'Period '+esc(dateText(p.start))+' → '+esc(dateText(p.end))+' · ':"")+(p.payday?'Pay day '+esc(dateText(p.payday)):"")+'</p>'
   +'<dl class="pw-stats">'
   +'<div class="pw-stat"><dt>Reviewed</dt><dd>'+done+' of '+total+'</dd></div>'
   +'<div class="pw-stat"><dt>Teams</dt><dd>'+ts.length+'</dd></div>'
-  +'<div class="pw-stat"><dt>Public holidays</dt><dd>'+ph.length+'</dd></div></dl></header>';
+  +'<div class="pw-stat"><dt>Public holidays</dt><dd>'+ph.length+'</dd></div></dl></div>';
  /* next steps */
  const firstOpen=ts.find(x=>{const q=prog(x);return q[0]<q[1]});
  const att=total===0?'<p>No employees are on this run yet.</p>'
@@ -303,12 +303,13 @@ function wrapHelp(){
 function init(){
  if(inited)return api;inited=true;
  D.body.classList.add("pw-on");if(signMode())D.body.classList.add("pw-sign");
- const header=D.querySelector("header"),hrow=header&&header.querySelector(".hrow");
+ const header=D.querySelector("body > header"),hrow=header&&header.querySelector(".hrow");
  if(hrow){
   hrow.classList.add("pw-hrow");
   const prog=hrow.querySelector(".prog"),auth=D.getElementById("authBox"),file=D.getElementById("jfile");
   const primary=el("div","pw-primary",{role:"group","aria-label":"Run and editing"});
-  ["runB","holidayB","undoB","redoB"].forEach(id=>{const b=D.getElementById(id);if(b)primary.appendChild(b)});
+  ["runB","holidayB"].forEach(id=>{const b=D.getElementById(id);if(b)primary.appendChild(b)});
+  const edits=el("span","pw-edits");["undoB","redoB"].forEach(id=>{const b=D.getElementById(id);if(b)edits.appendChild(b)});if(edits.firstChild)primary.appendChild(edits);
   const more=buildMore();
   hrow.appendChild(primary);if(prog)hrow.appendChild(prog);if(auth)hrow.appendChild(auth);hrow.appendChild(more);if(file)hrow.appendChild(file);
   if(prog){prog.setAttribute("role","progressbar");prog.setAttribute("aria-label",signMode()?"Payslips signed":"Employees reviewed")}

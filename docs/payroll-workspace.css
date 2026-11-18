@@ -11,19 +11,20 @@ body.pw-on .sbtotal{bottom:calc(var(--pw-foot-h,30px) + 4px)}
 
 /* ---------- focus ---------- */
 body.pw-on :focus-visible{outline:3px solid #1d4ed8;outline-offset:2px}
-body.pw-on header :focus-visible,body.pw-on .pw-ov-head :focus-visible{outline-color:#fcd34d}
+body.pw-on>header :focus-visible,body.pw-on .pw-ov-head :focus-visible{outline-color:#fcd34d}
 
 /* ---------- header ---------- */
-body.pw-on header{padding:10px 16px 10px}
+body.pw-on>header{padding:10px 16px 10px}
 body.pw-on .pw-hrow{gap:8px 10px;align-items:center}
 body.pw-on .pw-primary{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
-body.pw-on header .btn{min-height:36px;padding:6px 12px;font-size:13px;line-height:1.2}
+body.pw-on .pw-edits{display:inline-flex;gap:6px}
+body.pw-on>header .btn{min-height:36px;padding:6px 12px;font-size:13px;line-height:1.2}
 body.pw-on #authBox{display:flex;flex-wrap:wrap;align-items:center;gap:6px;min-width:0;overflow-wrap:anywhere}
 body.pw-on .pw-hrow .prog{flex:1 1 220px;min-width:160px;height:24px;border-radius:12px}
 body.pw-on .pw-hrow .prog>span{line-height:24px;font-size:12px;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.7)}
 body.pw-on .pw-hrow .prog>div{background:#0f766e}
 body.pw-on .pw-hrow .prog.pw-complete>div{background:#15803d}
-body.pw-on .pw-hrow .prog.pw-empty>div{width:0!important}
+body.pw-on .pw-hrow .prog.pw-empty>div{width:0!important;transition:none}
 
 /* More tools */
 body.pw-on .pw-more{position:relative;margin-left:auto}
@@ -45,13 +46,13 @@ body.pw-on .pw-more-danger{border-top:1px solid #2b4a63;padding-top:12px}
 body.pw-on #tabs.pw-nav{display:block;top:var(--pw-head-h,86px);padding:8px 16px;background:var(--bg);border-bottom:1px solid var(--line)}
 body.pw-on .pw-tabs{list-style:none;display:flex;flex-wrap:wrap;gap:6px;margin:0;padding:0}
 body.pw-on .pw-tabs li{display:flex}
-body.pw-on .pw-nav button{display:inline-flex;align-items:center;gap:6px;min-height:36px;border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:20px;padding:6px 14px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap}
+body.pw-on .pw-nav button{position:relative;display:inline-flex;align-items:center;gap:6px;min-height:36px;border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:20px;padding:6px 14px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap}
 body.pw-on .pw-nav button:hover{border-color:#94a3b8}
 body.pw-on .pw-nav button[aria-current="page"]{background:#0f2537;color:#fff;border-color:#0f2537}
 body.pw-on .pw-sub{margin-top:8px;padding-top:8px;border-top:1px dashed var(--line)}
 body.pw-on .pw-sub button{background:#f8fafc;font-size:12.5px}
 body.pw-on .pw-sub button[aria-current="page"]{background:#0f766e;border-color:#0f766e;color:#fff}
-body.pw-on .pw-badge{font-size:11px;font-weight:700;line-height:1.5;background:#e2e8f0;color:#334155;border-radius:10px;padding:0 7px}
+body.pw-on .pw-badge{position:relative;font-size:11px;font-weight:700;line-height:1.5;background:#e2e8f0;color:#334155;border-radius:10px;padding:0 7px}
 body.pw-on .pw-badge.pw-ok{background:#dcfce7;color:#14532d}
 body.pw-on [aria-current="page"] .pw-badge{background:rgba(255,255,255,.2);color:#fff}
 body.pw-on .pw-navtitle{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-weight:700;color:#0f2537;min-height:36px}
@@ -125,13 +126,13 @@ body.pw-on #runOv>div{margin:auto!important;width:100%}
 
 /* ---------- touch screens and phones ---------- */
 @media (pointer:coarse){
- body.pw-on header .btn,body.pw-on .pw-more>summary,body.pw-on .pw-nav button,body.pw-on .pw-btn,body.pw-on .pw-link,body.pw-on .pw-help>summary,body.pw-on .pw-adv>summary,body.pw-on .pw-more-panel .unlock{min-height:44px}
+ body.pw-on>header .btn,body.pw-on .pw-more>summary,body.pw-on .pw-nav button,body.pw-on .pw-btn,body.pw-on .pw-link,body.pw-on .pw-help>summary,body.pw-on .pw-adv>summary,body.pw-on .pw-more-panel .unlock,body.pw-on .pw-more-panel .btn{min-height:44px}
 }
 @media (max-width:640px){
  /* Only the section bar stays pinned on a phone; a tall pinned header would cover the work. */
- body.pw-on header{position:relative;top:auto;padding:10px 12px}
- body.pw-on header h1{font-size:16px}
- body.pw-on header .btn,body.pw-on .pw-more>summary,body.pw-on .pw-nav button,body.pw-on .pw-btn,body.pw-on .pw-link,body.pw-on .pw-help>summary,body.pw-on .pw-adv>summary,body.pw-on .pw-more-panel .unlock{min-height:44px}
+ body.pw-on>header{position:relative;top:auto;padding:10px 12px}
+ body.pw-on>header h1{font-size:16px}
+ body.pw-on>header .btn,body.pw-on .pw-more>summary,body.pw-on .pw-nav button,body.pw-on .pw-btn,body.pw-on .pw-link,body.pw-on .pw-help>summary,body.pw-on .pw-adv>summary,body.pw-on .pw-more-panel .unlock,body.pw-on .pw-more-panel .btn{min-height:44px}
  body.pw-on .pw-hrow .prog{flex:1 1 100%;order:-1}
  body.pw-on .pw-more{flex:1 1 100%;margin-left:0}
  body.pw-on .pw-more>summary{display:flex;justify-content:space-between}
