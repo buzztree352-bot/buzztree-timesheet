@@ -46,7 +46,7 @@
   dialog.setAttribute('aria-labelledby','holidayTitle');
   dialog.innerHTML='<h2 id="holidayTitle" style="margin-top:0">Public holidays</h2>'+
    '<p data-run></p><label style="display:block;margin:12px 0">Date in this run<br><select id="holidayDate" style="width:100%;padding:9px"></select></label>'+
-   '<label style="display:block;margin:12px 0"><input id="holidayEnabled" type="checkbox"> Public holiday (PH, not worked)</label>'+
+   '<label style="display:block;margin:12px 0"><input id="holidayEnabled" type="checkbox"> Public holiday</label>'+
    '<label style="display:block;margin:12px 0">Holiday name / reason<br><input id="holidayReason" maxlength="160" style="box-sizing:border-box;width:100%;padding:9px"></label>'+
    '<p id="holidayPreview" style="background:#f1f5f9;padding:12px;line-height:1.5"></p>'+
    '<p style="font-size:13px">Existing attendance, PHW, leave and overtime entries are preserved. Review recorded work separately and use PHW for anyone who worked on the holiday.</p>'+

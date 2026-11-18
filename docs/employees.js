@@ -14,15 +14,21 @@
   const who = () => (fbUser && fbUser.email) || "?";
   const byCode = c => S.list.find(e => e.code === c);
 
+  let pendingLoad = null, loadedFor = null;
   function load(force) {
     if (!FB || !fbUser) return Promise.resolve();
-    if (S.loading || (S.loaded && !force)) return Promise.resolve();
-    S.loading = true;
-    return FB.collection("employees").get().then(q => {
+    const user = fbUser;
+    if (pendingLoad && loadedFor === user) return pendingLoad;
+    if (S.loaded && loadedFor === user && !force) return Promise.resolve();
+    loadedFor = user; S.loading = true; S.error = "";
+    pendingLoad = withLoadTimeout(FB.collection("employees").get()).then(q => {
+      if (fbUser !== user) return;
       S.list = []; q.forEach(d => S.list.push(Object.assign({ eid: d.id }, d.data())));
       S.list.sort((a, b) => (a.team + a.code).localeCompare(b.team + b.code));
       S.loaded = true; S.loading = false;
-    }).catch(e => { S.loading = false; S.msg = "Could not load the employee file: " + e.code + " (Firestore rules updated?)"; });
+    }).catch(e => { if (fbUser === user) { S.loading = false; S.error = "Could not load the employee file. Check your connection and account, then retry."; S.msg = S.error; } })
+      .finally(() => { if (loadedFor === user) { pendingLoad = null; S.loading = false; } });
+    return pendingLoad;
   }
   function rerender() { if (cur === "__EMP__") renderList(); }
 
@@ -78,7 +84,10 @@
     return m;
   }
   function render(L) {
-    if (!S.loaded) { L.innerHTML = '<div class="banner">Loading the employee file…</div>'; load().then(rerender); return; }
+    if (!S.loaded) {
+      if (S.error) { L.innerHTML = '<div class="banner">' + esc(S.error) + ' <button class="mini" id="empRetry">Retry employee records</button></div>'; L.querySelector('#empRetry').onclick = () => { S.error = ''; load(true).then(rerender); rerender(); }; return; }
+      L.innerHTML = '<div class="banner">Loading the employee file…</div>'; load().then(rerender); return;
+    }
     let h = '<div class="banner noprint">👤 <b>Employee file</b>: one permanent record per person (details, contact, tax, photo, history). '
       + 'Team moves apply from the date you choose; code changes apply from the next month you create in ⚙ Run / month. '
       + '<b>Office only.</b> ID and tax numbers are personal information (POPIA).'
@@ -138,7 +147,7 @@
       + '<br><label class="mini" style="cursor:pointer;display:inline-block;margin-top:4px">📷 Photo<input type="file" accept="image/*" capture="user" data-ef-photo="' + e.eid + '" style="display:none"></label></div>'
       + '<div style="' + box + ';flex:1;min-width:280px"><b>Details</b>'
       + row("Name", inp("name", e.name, "", 260)) + row("Designation", inp("designation", e.designation, "e.g. General worker", 200))
-      + row("Start date", inp("start", e.start, "", 150, "date")) + row("Contract type", sel("contract", e.contract, CONTRACTS))
+      + row("Start date", inp("start", e.start, "", 150, "date")) + row("Leaving date", inp("end", e.end, "", 150, "date")) + row("Contract type", sel("contract", e.contract, CONTRACTS))
       + row("Pay basis", '<b>' + esc(e.basis) + '</b> <small style="color:var(--mut)">(changed from the timesheet ✎ for now)</small>')
       + row("Status", sel("status", e.status, ["active", "inactive"]) + ' <small style="color:var(--mut)">inactive = not on next month\'s roster</small>')
       + row("No-pay", '<input type="checkbox" data-ef-f="nopay"' + (e.nopay ? " checked" : "") + '> <small style="color:var(--mut)">on the roster but paid nothing</small>')
@@ -176,7 +185,7 @@
   }
 
   // ---------- saving a profile ----------
-  const FIELDS = ["name", "designation", "start", "contract", "status", "nopay", "cell", "wa", "cell2", "email", "addr1", "area", "town", "postcode", "lang",
+  const FIELDS = ["name", "designation", "start", "end", "contract", "status", "nopay", "cell", "wa", "cell2", "email", "addr1", "area", "town", "postcode", "lang",
                   "nokName", "nokRel", "nokCell", "idno", "passport", "country", "permit", "permitExp", "taxno", "taxStatus", "dirNo", "dirRate", "dirTo"];
   function readForm(box) {
     const v = {};
@@ -195,6 +204,7 @@
       if (k === "taxStatus" && !old && nv === "normal tables") return;   // the drop-down's default, not a real change
       if (String(old) !== String(nv)) { upd[k] = nv; hist.push([k, old, nv]); }
     });
+    if (v.end && (v.start || e.start) && v.end < (v.start || e.start)) errs.push("leaving date cannot be before start date");
     let teamMove = null, codeChange = null;
     if (v._team) { if (!v._teamEff) errs.push("pick the date the team move applies from"); else teamMove = { to: v._team, eff: v._teamEff }; }
     if (v._code) {
@@ -433,3 +443,4 @@
 
   window.EMPUI = { render, load, rosterForNewRun, _state: S };
 })();
+

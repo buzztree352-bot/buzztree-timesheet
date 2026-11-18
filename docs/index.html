@@ -109,6 +109,11 @@ footer{position:fixed;bottom:0;left:0;right:0;background:#0f2537;color:#9fb6c6;f
 <script src="bulk-core.js"></script>
 <script src="bulk-attendance.js"></script>
 <script src="run-holidays.js"></script>
+<script src="payroll-workspace.js"></script>
+<script src="roster-recovery.js"></script>
+<script src="employment-review.js"></script>
+<link rel="stylesheet" href="payroll-workspace.css">
+<link rel="stylesheet" href="payroll-status.css">
 <script src="payprint-core.js"></script>
 <script src="payprint-pdf.js"></script>
 <script src="payprint.js"></script>
@@ -136,16 +141,25 @@ footer{position:fixed;bottom:0;left:0;right:0;background:#0f2537;color:#9fb6c6;f
     <input type="file" id="jfile" accept=".json" style="display:none">
   </div>
 </header>
-<nav id="tabs"></nav>
+<div class="save-status-strip" aria-label="Saving and connection status">
+  <span id="fsave" role="status">Device: no changes saved this session</span>
+  <span id="fcloud" role="status">Cloud: waiting for sign-in</span>
+  <span id="ffile" role="status">Backup file: not linked</span>
+  <button class="mini" id="retryCloud" hidden>Retry cloud save</button>
+  <button class="mini" id="reviewCloud" hidden>Review sync conflict</button>
+  <button class="mini noprint" id="employmentCheck">Check employment status</button>
+</div>
+<nav id="tabs" aria-label="Payroll sections"></nav>
 <main>
   <div class="leg">
     <span class="W">W worked</span><span class="A">A absent (no pay)</span><span class="S">S sick</span><span class="L">L leave</span>
     <span class="R">R rain (no pay)</span><span class="PH">PH pub. holiday (paid)</span><span class="PHW">PHW holiday WORKED</span><span class="P" style="padding:2px 8px;border-radius:4px;font-weight:700">P partial hrs (min 4h)</span><span class="F">F funeral / family resp. (3 paid days a year)</span><span class="PW">off / payweekend</span>
   </div>
-  <div style="font-size:12px;color:var(--mut)">Tap a day to cycle W → A → S → L → F (funeral / family responsibility). Tap a public-holiday day to toggle PH ↔ PHW. Right-click any day to select PH or PHW. Grey days are fixed — tick “unlock fixed days” to override. Everything autosaves in this browser; export CSV when a team is done.</div>
+  <div style="font-size:12px;color:var(--mut)">Tap a day to cycle W → A → S → L → F (funeral / family responsibility). Tap a public-holiday day to toggle PH ↔ PHW. Right-click any day to select PH or PHW. Grey days are fixed — tick “unlock fixed days” to override. Check the save indicators above before leaving. Export after reviewing the team.</div>
+  <div id="appNotice" role="status" aria-live="polite"></div>
   <div id="list"></div>
 </main>
-<footer><span id="fsave">saved ✓</span><span id="ffile" style="color:#fcd34d">autosave: browser only — link a file!</span><span id="pgFile">File: Timesheet entry</span><span>Decision-support only — Byron confirms &amp; pays</span></footer>
+<footer><span id="pgFile">File: Timesheet entry</span><span>Decision-support only — Byron confirms &amp; pays</span></footer>
 <script>
 const DATA={emps:[],standby:[],days:[{"d": "2026-07-23", "w": "Th", "lbl": "23 Jul", "def": "W", "lock": false, "why": ""}, {"d": "2026-07-24", "w": "Fr", "lbl": "24 Jul", "def": "PW", "lock": true, "why": "Payweekend changeover break"}, {"d": "2026-07-25", "w": "Sa", "lbl": "25 Jul", "def": "PW", "lock": true, "why": "Payweekend changeover break"}, {"d": "2026-07-26", "w": "Su", "lbl": "26 Jul", "def": "PW", "lock": true, "why": "Payweekend changeover break"}, {"d": "2026-07-27", "w": "Mo", "lbl": "27 Jul", "def": "PW", "lock": true, "why": "Payweekend changeover break"}, {"d": "2026-07-28", "w": "Tu", "lbl": "28 Jul", "def": "W", "lock": false, "why": ""}, {"d": "2026-07-29", "w": "We", "lbl": "29 Jul", "def": "W", "lock": false, "why": ""}, {"d": "2026-07-30", "w": "Th", "lbl": "30 Jul", "def": "W", "lock": false, "why": ""}, {"d": "2026-07-31", "w": "Fr", "lbl": "31 Jul", "def": "W", "lock": false, "why": ""}, {"d": "2026-08-01", "w": "Sa", "lbl": "1 Aug", "def": "W", "lock": false, "why": ""}, {"d": "2026-08-02", "w": "Su", "lbl": "2 Aug", "def": "SUN", "lock": true, "why": "Sunday"}, {"d": "2026-08-03", "w": "Mo", "lbl": "3 Aug", "def": "W", "lock": false, "why": ""}, {"d": "2026-08-04", "w": "Tu", "lbl": "4 Aug", "def": "W", "lock": false, "why": ""}, {"d": "2026-08-05", "w": "We", "lbl": "5 Aug", "def": "W", "lock": false, "why": ""}, {"d": "2026-08-06", "w": "Th", "lbl": "6 Aug", "def": "W", "lock": false, "why": ""}, {"d": "2026-08-07", "w": "Fr", "lbl": "7 Aug", "def": "W", "lock": false, "why": ""}, {"d": "2026-08-08", "w": "Sa", "lbl": "8 Aug", "def": "W", "lock": false, "why": ""}, {"d": "2026-08-09", "w": "Su", "lbl": "9 Aug", "def": "SUN", "lock": true, "why": "Sunday"}, {"d": "2026-08-10", "w": "Mo", "lbl": "10 Aug", "def": "PH", "lock": false, "why": "Public holiday (Women's Day observed) — paid, not worked"}, {"d": "2026-08-11", "w": "Tu", "lbl": "11 Aug", "def": "R", "lock": true, "why": "Rain — no work, no pay"}, {"d": "2026-08-12", "w": "We", "lbl": "12 Aug", "def": "R", "lock": true, "why": "Rain — no work, no pay"}, {"d": "2026-08-13", "w": "Th", "lbl": "13 Aug", "def": "W", "lock": false, "why": ""}, {"d": "2026-08-14", "w": "Fr", "lbl": "14 Aug", "def": "W", "lock": false, "why": ""}, {"d": "2026-08-15", "w": "Sa", "lbl": "15 Aug", "def": "W", "lock": false, "why": ""}, {"d": "2026-08-16", "w": "Su", "lbl": "16 Aug", "def": "SUN", "lock": true, "why": "Sunday"}, {"d": "2026-08-17", "w": "Mo", "lbl": "17 Aug", "def": "W", "lock": false, "why": ""}, {"d": "2026-08-18", "w": "Tu", "lbl": "18 Aug", "def": "W", "lock": false, "why": ""}, {"d": "2026-08-19", "w": "We", "lbl": "19 Aug", "def": "W", "lock": false, "why": ""}, {"d": "2026-08-20", "w": "Th", "lbl": "20 Aug", "def": "W", "lock": false, "why": ""}, {"d": "2026-08-21", "w": "Fr", "lbl": "21 Aug", "def": "W", "lock": false, "why": ""}, {"d": "2026-08-22", "w": "Sa", "lbl": "22 Aug", "def": "NW", "lock": true, "why": "Saturday not worked (cycle shift) — no pay"}, {"d": "2026-08-23", "w": "Su", "lbl": "23 Aug", "def": "SUN", "lock": true, "why": "Sunday"}, {"d": "2026-08-24", "w": "Mo", "lbl": "24 Aug", "def": "W", "lock": false, "why": ""}, {"d": "2026-08-25", "w": "Tu", "lbl": "25 Aug", "def": "W", "lock": false, "why": ""}, {"d": "2026-08-26", "w": "We", "lbl": "26 Aug", "def": "W", "lock": false, "why": ""}]};let rosterLoaded=false,rosterMissing=false;
 let KEY="buzz-aug2026-ts-v1";
@@ -159,53 +173,250 @@ function logEdit(c,field,oldv,newv,why){if(!st._log)st._log=[];st._log.push({ts:
 // ---- file autosave (File System Access API) ----
 let fh=null,wTimer=null;
 let RUNID="aug-2026";let FB=null,fbUser=null,cloudTimer=null;
-function cloudInit(){if(!window.__FBCONFIG||!window.__FBCONFIG.apiKey){ffile("config.js pending — nothing loads without it",false);renderAuth();return}
- try{firebase.initializeApp(window.__FBCONFIG);FB=firebase.firestore();try{FB.enablePersistence({synchronizeTabs:true})}catch(e){}
-  firebase.auth().onAuthStateChanged(u=>{if(window.PAYPRINTUI)PAYPRINTUI.clear();fbUser=u;renderAuth();if(u)loadPeriod().then(loadRoster);else{rosterLoaded=false;renderTabs();renderList()}});renderAuth();
- }catch(e){ffile("cloud init failed: "+e.message,false)}}
+let rosterLoading=false,rosterError="",runReady=false,cloudHydrated=false;
+let runGeneration=0,unsubscribeCloud=null,rosterRequest=0,loadTimer=null;
+let remoteStamp=0,cloudPending=false,cloudWriting=false,cloudConflict=false;
+function statusText(id,text,tone){const el=document.getElementById(id);if(el){el.textContent=text;el.dataset.tone=tone||"neutral"}}
+function cloudStatus(text,tone){
+ statusText("fcloud","Cloud: "+text,tone);
+ const retry=document.getElementById("retryCloud"),review=document.getElementById("reviewCloud");
+ if(retry)retry.hidden=!cloudPending||cloudWriting||cloudConflict;
+ if(review)review.hidden=!cloudConflict||SIGNMODE;
+}
+function stopRunSession(){
+ if(window.EmploymentReview)EmploymentReview.reset();
+ runGeneration++;rosterRequest++;clearTimeout(cloudTimer);clearTimeout(loadTimer);
+ if(unsubscribeCloud){unsubscribeCloud();unsubscribeCloud=null}
+ runReady=false;cloudHydrated=false;rosterLoaded=false;rosterMissing=false;rosterLoading=false;rosterError="";
+ const notice=document.getElementById("appNotice");if(notice)notice.textContent="";
+ cloudPending=false;cloudWriting=false;cloudConflict=false;remoteStamp=0;
+ DATA.emps=[];DATA.standby=[];
+}
+function persistDevice(){
+ try{localStorage.setItem(KEY,JSON.stringify(st));statusText("fsave","Device: saved "+new Date().toLocaleTimeString(),"ok");return true}
+ catch(e){statusText("fsave","Device: save failed — download a backup","error");return false}
+}
+function markCloudBase(stamp){try{localStorage.setItem(KEY+"-cloud-base",String(stamp))}catch(e){}}
+function savedCloudBase(){try{const x=localStorage.getItem(KEY+"-cloud-base");return x===null?null:Number(x)}catch(e){return null}}
+async function reloadRun(){
+ if(!FB||!fbUser){renderAuth();renderTabs();renderList();return}
+ if(cloudPending||cloudWriting||cloudConflict){
+  ffile("This device has unsynced changes. Download a backup before reloading. Use Retry cloud save if the connection failed.",false);
+  return;
+ }
+ await loadPeriod();
+}
+function runLoadFailed(error){
+ rosterLoading=false;rosterError=error.message||error.code||"Could not load this run.";
+ cloudStatus("load failed — retry","error");renderTabs();renderList();
+}
+function withLoadTimeout(promise){
+ let timer;return Promise.race([promise,new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error("Loading took too long. Check your connection and retry.")),15000)})]).finally(()=>clearTimeout(timer));
+}
+function cloudInit(){if(!window.__FBCONFIG||!window.__FBCONFIG.apiKey){rosterError="The app connection is unavailable. Contact the office.";cloudStatus("connection unavailable","error");renderAuth();return}
+ try{firebase.initializeApp(window.__FBCONFIG);FB=firebase.firestore();try{FB.enablePersistence({synchronizeTabs:true}).catch(()=>{})}catch(e){}
+  firebase.auth().onAuthStateChanged(u=>{
+   if(window.PAYPRINTUI)PAYPRINTUI.clear();if(window.EMPUI){EMPUI._state.loaded=false;EMPUI._state.list=[];EMPUI._state.error=""}stopRunSession();fbUser=u;renderAuth();
+   if(u)loadPeriod();else{cloudStatus("signed out","warn");renderTabs();renderList()}
+  });renderAuth();
+ }catch(e){runLoadFailed(e)}}
 function renderAuth(){const b=document.getElementById("authBox");if(!b)return;
  if(!window.__FBCONFIG||!window.__FBCONFIG.apiKey){b.innerHTML='<span style="font-size:11px;color:#fcd34d">config.js pending</span>';return}
  b.innerHTML=fbUser?'<span style="font-size:11px;color:#86efac">☁ '+fbUser.email+'</span> <button class="btn" id="gso" style="background:#334155">Sign out</button>'
   :'<button class="btn" id="gsi" style="background:#ea580c">🔑 Sign in with Google</button>';
  const i=document.getElementById("gsi");if(i)i.onclick=()=>{if(window.__SIP)return;window.__SIP=1;i.textContent="signing in\u2026";firebase.auth().signInWithPopup(new firebase.auth.GoogleAuthProvider()).catch(e=>{if(e.code==="auth/cancelled-popup-request"||e.code==="auth/popup-closed-by-user")return;return firebase.auth().signInWithRedirect(new firebase.auth.GoogleAuthProvider())}).catch(e=>alert(e.message+" \u2014 if this repeats: Chrome \u25b8 Settings \u25b8 Site settings \u25b8 Third-party cookies \u25b8 Allow")).finally(()=>{window.__SIP=0;renderAuth()})};
- const o=document.getElementById("gso");if(o)o.onclick=()=>firebase.auth().signOut();}
-function loadRoster(){FB.collection("roster").doc(RUNID).get().then(d=>{
- if(d.exists){const j=d.data();DATA.emps=j.emps||[];DATA.standby=j.standby||[];rosterLoaded=true;rosterMissing=false;listenCloud();cloudPush();}
- else{rosterMissing=true}
- renderTabs();renderList()}).catch(e=>{ffile("roster load failed: "+e.code+" — allowlisted?",false);renderTabs();renderList()})}
-function seedRoster(txt){let j;try{j=JSON.parse(txt)}catch(e){alert("Not valid JSON");return}
- if(!j.emps||!j.emps.length){alert("JSON must contain emps[] (use ROSTER-SEED_paste-once.json)");return}
- FB.collection("roster").doc(RUNID).set({emps:j.emps,standby:j.standby||[],by:fbUser.email,at:new Date().toISOString()})
- .then(()=>{alert("Roster seeded ("+j.emps.length+" employees). Never commit that file to GitHub.");loadRoster()})
- .catch(e=>alert("Seed failed: "+e.code))}
-function cloudPush(){if(!FB||!fbUser||!rosterLoaded)return;clearTimeout(cloudTimer);cloudTimer=setTimeout(()=>{
- FB.collection("runs").doc(RUNID).set({_ts:st._ts||Date.now(),state:st,by:fbUser.email,at:new Date().toISOString()})
- .then(()=>ffile("cloud ✓ "+new Date().toLocaleTimeString(),true))
- .catch(e=>ffile("cloud save FAILED: "+e.code,false))},900)}
-function listenCloud(){FB.collection("runs").doc(RUNID).onSnapshot(d=>{if(!d.exists)return;const j=d.data();
- if(j&&j.state&&(j._ts||0)>(st._ts||0)){st=j.state;lastSnap=JSON.stringify(st);try{localStorage.setItem(KEY,JSON.stringify(st))}catch(e){};snapUI();renderTabs();renderList();ffile("cloud ⇩ pulled newer ("+(j.by||"?")+")",true)}})}
+ const o=document.getElementById("gso");if(o)o.onclick=()=>{if(cloudPending||cloudWriting||cloudConflict){ffile("Your device has unsynced changes. Retry saving or review the sync conflict before signing out.",false);return}firebase.auth().signOut()};}
+async function loadRoster(){
+ if(!FB||!fbUser)return;
+ const run=RUNID,generation=runGeneration,request=++rosterRequest;
+ const current=()=>RUNID===run&&runGeneration===generation&&rosterRequest===request&&!!fbUser;
+ rosterLoading=true;rosterError="";rosterMissing=false;rosterLoaded=false;runReady=false;cloudHydrated=false;
+ cloudStatus("loading roster and entries…");renderTabs();renderList();
+ try{
+  const d=await withLoadTimeout(FB.collection("roster").doc(run).get());if(!current())return;
+  if(d.metadata&&d.metadata.fromCache&&!d.exists)throw new Error("The roster is not available offline. Connect and retry.");
+  const j=d.exists?d.data():null;
+  if(!j||!Array.isArray(j.emps)||!j.emps.length){
+   rosterLoading=false;rosterMissing=true;DATA.emps=[];DATA.standby=[];
+   cloudStatus("no roster saved for this run","warn");renderTabs();renderList();return;
+  }
+  DATA.emps=j.emps;DATA.standby=Array.isArray(j.standby)?j.standby:[];
+  rosterLoaded=true;rosterLoading=false;
+  listenCloud();renderTabs();renderList();
+ }catch(e){if(current())runLoadFailed(e)}
+}
+async function seedRoster(txt){
+ if(!FB||!fbUser||SIGNMODE)return;
+ let j;try{j=JSON.parse(txt)}catch(e){alert("This is not valid roster JSON.");return}
+ if(!Array.isArray(j.emps)||!j.emps.length||j.emps.some(e=>!e||typeof e.c!=="string"||!e.c.trim()||typeof e.n!=="string"||!e.n.trim()||typeof e.t!=="string"||!e.t.trim())||new Set(j.emps.map(e=>e.c)).size!==j.emps.length){alert("The roster needs unique employee codes, names and teams.");return}
+ const run=RUNID,user=fbUser,generation=runGeneration,ref=FB.collection("roster").doc(run);
+ try{
+  await FB.runTransaction(async tx=>{
+   const existing=await tx.get(ref);
+   if(existing.exists&&(existing.data().emps||[]).length)throw new Error("A roster already exists. Retry loading it instead of replacing it.");
+   if(run!==RUNID||generation!==runGeneration||fbUser!==user)throw new Error("The run or account changed. Reopen the import.");
+   tx.set(ref,{emps:j.emps,standby:Array.isArray(j.standby)?j.standby:[],by:user.email,at:new Date().toISOString(),copiedFrom:j.sourceRun||null});
+  });
+  if(run===RUNID&&generation===runGeneration){ffile("Roster imported. Review the employees before capturing attendance.",true);await loadRoster()}
+ }catch(e){alert(e.message||"Roster import failed. Retry loading before importing again.")}
+}
+function cloudPush(){
+ if(!FB||!fbUser||!rosterLoaded)return;
+ cloudPending=true;
+ if(!runReady||!cloudHydrated){cloudStatus("device changes pending — waiting for server","warn");return}
+ if(cloudConflict){cloudStatus("conflicting changes — keep a backup and review","error");return}
+ clearTimeout(cloudTimer);cloudStatus(navigator.onLine?"changes waiting to sync…":"offline — check Device status; cloud save pending","warn");
+ if(cloudWriting||!navigator.onLine)return;
+ const generation=runGeneration,run=RUNID,user=fbUser;
+ cloudTimer=setTimeout(async()=>{
+  if(generation!==runGeneration||run!==RUNID||fbUser!==user||!runReady||!cloudHydrated)return;
+  const state=JSON.parse(JSON.stringify(st)),stamp=state._ts||0,expected=remoteStamp;
+  cloudWriting=true;cloudStatus("saving…");
+  try{
+   const ref=FB.collection("runs").doc(run);
+   await FB.runTransaction(async tx=>{
+    const d=await tx.get(ref);const latest=d.exists?(d.data()._ts||0):0;
+    if(latest!==expected){const err=new Error("This run changed on another device. Your local edits are retained.");err.code="run-conflict";throw err}
+    if(generation!==runGeneration||fbUser!==user)throw new Error("Run or account changed before saving.");
+    tx.set(ref,{_ts:stamp,state,by:user.email,at:new Date().toISOString()});
+   });
+   if(generation!==runGeneration)return;
+   remoteStamp=stamp;markCloudBase(stamp);cloudWriting=false;
+   cloudPending=(st._ts||0)!==stamp;
+   cloudStatus(cloudPending?"more changes waiting to sync…":"synced "+new Date().toLocaleTimeString(),cloudPending?"warn":"ok");
+   if(cloudPending)cloudPush();
+  }catch(e){
+   if(generation!==runGeneration)return;
+   cloudWriting=false;cloudPending=true;
+   if(e.code==="run-conflict")cloudConflict=true;
+   cloudStatus(cloudConflict?"another device changed this run — review needed":"save failed — retry when connected","error");
+   ffile(e.message||"Cloud save was not confirmed. Your device copy is retained.",false);
+  }
+ },900);
+}
+async function reviewSyncConflict(){
+ if(!FB||!fbUser||!cloudConflict||SIGNMODE)return;
+ const generation=runGeneration,run=RUNID,user=fbUser,local=JSON.parse(JSON.stringify(st));
+ let remote;
+ try{const d=await withLoadTimeout(FB.collection("runs").doc(run).get({source:"server"}));remote=d.exists?d.data():{_ts:0,state:{}}}
+ catch(e){ffile("Could not load the cloud copy for comparison. Your device copy is unchanged.",false);return}
+ if(generation!==runGeneration||user!==fbUser)return;
+ const dialog=document.createElement("dialog");dialog.id="syncDialog";dialog.setAttribute("aria-labelledby","syncTitle");
+ dialog.innerHTML='<h2 id="syncTitle">Review unsynced changes</h2><p>Two versions of this run need review. Choosing a version replaces the whole set of payroll entries, deductions and receipts for this run; it does not merge individual changes.</p><pre id="syncComparison"></pre><p>Download both versions before choosing. The download contains payroll data; keep it in your payroll folder.</p><div class="actions"><button class="btn" id="syncDownload">Download both versions</button><button class="btn" id="syncCloud" disabled>Use cloud copy on this device</button><button class="btn grn" id="syncLocal" disabled>Use device copy for shared run</button><button class="mini" id="syncClose">Close</button></div><p id="syncMessage" role="status"></p>';
+ const count=x=>Object.keys(x||{}).filter(k=>!k.startsWith("_")).length;
+ const time=x=>x?new Date(x).toLocaleString():"No saved changes";
+ dialog.querySelector("#syncComparison").textContent=PLBL()+"\nDevice: "+count(local)+" employee records; "+time(local._ts)+"\nCloud: "+count(remote.state)+" employee records; "+time(remote._ts);
+ const message=dialog.querySelector("#syncMessage"),localButton=dialog.querySelector("#syncLocal"),cloudButton=dialog.querySelector("#syncCloud");
+ dialog.querySelector("#syncClose").onclick=()=>dialog.close();dialog.onclose=()=>dialog.remove();
+ dialog.querySelector("#syncDownload").onclick=()=>{
+  const a=document.createElement("a");const url=URL.createObjectURL(new Blob([JSON.stringify({period:periodMeta(),device:local,cloud:remote},null,2)],{type:"application/json"}));
+  a.href=url;a.download=PFILE()+"_sync_review_"+Date.now()+".json";a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+  localButton.disabled=false;cloudButton.disabled=false;message.textContent="Backup download requested. Check that it completed before choosing a version.";
+ };
+ async function choose(useLocal){
+  if(generation!==runGeneration||fbUser!==user||JSON.stringify(st)!==JSON.stringify(local)){message.textContent="The run changed while this panel was open. Close and compare again.";return}
+  if(!confirm(useLocal?"Replace the shared entries for "+PLBL()+" with this device's complete copy? Other devices will receive it.":"Replace this device's entries with the cloud copy shown? Keep the downloaded backup to recover your local work."))return;
+  localButton.disabled=true;cloudButton.disabled=true;
+  try{
+   // Keep an additional recovery copy if storage is available; never delete it here.
+   try{localStorage.setItem(KEY+"-recovery-"+Date.now(),JSON.stringify({device:local,cloud:remote}))}catch(e){}
+   const ref=FB.collection("runs").doc(run);
+   const chosen=await FB.runTransaction(async tx=>{
+    const d=await tx.get(ref),latest=d.exists?d.data():{_ts:0,state:{}};
+    if((latest._ts||0)!==(remote._ts||0))throw new Error("The cloud copy changed. Close and compare again.");
+    if(generation!==runGeneration||fbUser!==user)throw new Error("The run or account changed. Close this panel.");
+    if(!useLocal)return latest;
+    const state={...local,_ts:Math.max(Date.now(),(remote._ts||0)+1,(local._ts||0)+1)};
+    const next={_ts:state._ts,state,by:user.email,at:new Date().toISOString()};tx.set(ref,next);return next;
+   });
+   if(generation!==runGeneration)return;
+   st=chosen.state||{};remoteStamp=chosen._ts||0;cloudPending=false;cloudConflict=false;
+   lastSnap=JSON.stringify(st);undoStack=[];redoStack=[];persistDevice();markCloudBase(remoteStamp);queueWrite();
+   cloudStatus(useLocal?"device version synced":"cloud version loaded","ok");ffile("Sync review complete. The downloaded backup contains both earlier versions.",true);
+   dialog.close();snapUI();renderTabs();renderList();
+  }catch(e){message.textContent=e.message||"No version change was confirmed.";localButton.disabled=false;cloudButton.disabled=false}
+ }
+ localButton.onclick=()=>choose(true);cloudButton.onclick=()=>choose(false);
+ document.body.appendChild(dialog);dialog.showModal();dialog.querySelector("#syncDownload").focus();
+}
+
+function listenCloud(){
+ if(unsubscribeCloud)unsubscribeCloud();
+ const run=RUNID,generation=runGeneration;
+ clearTimeout(loadTimer);loadTimer=setTimeout(()=>{
+  if(generation!==runGeneration||runReady)return;
+  rosterError="The roster loaded, but payroll entries are still unavailable. Check your connection and retry.";
+  cloudStatus("entries are taking longer to load","warn");renderList();
+ },15000);
+ unsubscribeCloud=FB.collection("runs").doc(run).onSnapshot({includeMetadataChanges:true},d=>{
+  if(generation!==runGeneration||run!==RUNID||!fbUser)return;
+  const meta=d.metadata||{};
+  if(meta.hasPendingWrites)return;
+  const j=d.exists?d.data():{},stamp=j._ts||0,localStamp=st._ts||0;
+  if(meta.fromCache){
+   if(!runReady&&d.exists&&j.state){
+    const base=savedCloudBase(),dirty=(base!==null&&localStamp>base)||localStamp>stamp;
+    if(!dirty&&localStamp<=stamp){st=j.state;lastSnap=JSON.stringify(st)}
+    runReady=true;rosterError="";clearTimeout(loadTimer);snapUI();renderTabs();renderList();
+   }
+   cloudStatus("cached copy — server sync is not confirmed","warn");return;
+  }
+  clearTimeout(loadTimer);rosterError="";
+  if(!cloudHydrated){
+   remoteStamp=stamp;runReady=true;cloudHydrated=true;
+   const base=savedCloudBase();
+   if((base!==null&&localStamp>base)||localStamp>stamp){
+    cloudPending=true;
+    if(base===stamp){cloudPush()}
+    else{cloudConflict=true;cloudStatus("device copy needs review before syncing","warn");ffile("Unsynced device changes were kept. Download a backup before choosing a cloud copy.",false)}
+   }else{
+    st=j.state&&typeof j.state==="object"?j.state:{};lastSnap=JSON.stringify(st);
+    persistDevice();markCloudBase(stamp);cloudStatus("loaded "+new Date().toLocaleTimeString(),"ok");
+   }
+  }else if(stamp>remoteStamp){
+   if(cloudWriting)return;
+   if(cloudPending){cloudConflict=true;cloudStatus("another device changed this run — review needed","error")}
+   else{remoteStamp=stamp;st=j.state||{};lastSnap=JSON.stringify(st);persistDevice();markCloudBase(stamp);cloudStatus("updated from cloud "+new Date().toLocaleTimeString(),"ok")}
+  }
+  snapUI();renderTabs();renderList();
+ },e=>{if(generation===runGeneration){clearTimeout(loadTimer);runLoadFailed(e)}});
+}
 const idb=()=>new Promise((res,rej)=>{const r=indexedDB.open("buzz-ts",1);r.onupgradeneeded=()=>r.result.createObjectStore("kv");r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)});
 async function idbSet(k,v){const d=await idb();return new Promise((res,rej)=>{const tx=d.transaction("kv","readwrite");tx.objectStore("kv").put(v,k);tx.oncomplete=res;tx.onerror=()=>rej(tx.error)})}
 async function idbGet(k){const d=await idb();return new Promise((res,rej)=>{const rq=d.transaction("kv").objectStore("kv").get(k);rq.onsuccess=()=>res(rq.result);rq.onerror=()=>rej(rq.error)})}
-function ffile(msg,ok){const f=document.getElementById("ffile");if(f){f.textContent=msg;f.style.color=ok?"#86efac":"#fcd34d"}}
-async function writeFile(){if(!fh)return;try{const w=await fh.createWritable();await w.write(JSON.stringify({_ts:st._ts||Date.now(),period:periodMeta(),state:st},null,1));await w.close();ffile("autosave → "+fh.name+" ✓ "+new Date().toLocaleTimeString(),true)}catch(e){ffile("file save FAILED — use Copy backup",false)}}
-function queueWrite(){if(!fh)return;clearTimeout(wTimer);wTimer=setTimeout(writeFile,800)}
-async function linkFile(){try{
- fh=await window.showSaveFilePicker({suggestedName:PFILE()+"_Timesheet_AUTOSAVE.json",types:[{description:"JSON",accept:{"application/json":[".json"]}}]});
- try{await idbSet("fh",fh)}catch(e){}
- await writeFile();alert("Linked. Save it in "+PLBL()+" Payroll\\_work so the run and Claude can see it. It now autosaves on every change.")
-}catch(e){if(e.name!=="AbortError")alert("Your browser blocked the file picker — keep using ⧉/💾 backups instead.")}}
+function ffile(msg,ok){
+ // Legacy callers report app messages here; backup and cloud statuses have dedicated channels.
+ const el=document.getElementById("appNotice");if(el){el.textContent=msg;el.className="banner";el.dataset.tone=ok?"ok":"warn"}
+}
+function fileStatus(msg,ok){statusText("ffile","Backup file: "+msg,ok?"ok":"warn")}
+async function writeFile(payload,handle){
+ const target=handle||fh;if(!target)return;
+ const snapshot=payload||{_ts:st._ts||0,period:periodMeta(),state:JSON.parse(JSON.stringify(st))};
+ try{const w=await target.createWritable();await w.write(JSON.stringify(snapshot,null,1));await w.close();
+  if(target===fh)fileStatus(target.name+" saved "+new Date().toLocaleTimeString()+"; OneDrive sync is not checked here",true);
+ return true;
+ }catch(e){if(target===fh)fileStatus("save failed — download a backup",false);return false}
+}
+function queueWrite(){if(!fh)return;clearTimeout(wTimer);
+ const payload={_ts:st._ts||0,period:periodMeta(),state:JSON.parse(JSON.stringify(st))},handle=fh;
+ wTimer=setTimeout(()=>writeFile(payload,handle),800);
+}
+async function linkFile(){
+ if(!PERIOD){ffile("Load a payroll run before linking its backup file.",false);return}
+ const run=RUNID,generation=runGeneration,payload={_ts:st._ts||0,period:periodMeta(),state:JSON.parse(JSON.stringify(st))};
+ try{
+  const handle=await window.showSaveFilePicker({suggestedName:PFILE()+"_Timesheet_AUTOSAVE.json",types:[{description:"JSON",accept:{"application/json":[".json"]}}]});
+  try{await idbSet("fh:"+run,handle)}catch(e){}
+  if(generation!==runGeneration){ffile("The run changed while choosing a file. Open Link autosave file again for this run.",false);return}
+  fh=handle;if(await writeFile(payload,handle))ffile("Backup file linked for "+PLBL()+". Choose a file in your OneDrive payroll folder to have OneDrive sync it.",true);
+ }catch(e){if(e.name!=="AbortError")fileStatus("file picker unavailable — download a backup instead",false)}
+}
 async function reconnect(){try{
- const h=await idbGet("fh");if(!h)return;
- let p=await h.queryPermission({mode:"readwrite"});
- if(p!=="granted")p=await h.requestPermission({mode:"readwrite"});
- if(p!=="granted"){ffile("autosave file needs re-link (permission)",false);return}
- fh=h;
- try{const f=await h.getFile();const j=JSON.parse(await f.text());
-   if(j&&j.state&&(j._ts||0)>(st._ts||0)){st=j.state;lastSnap=JSON.stringify(st);ffile("loaded newer state from "+h.name+" ✓",true);renderTabs();renderList()}
-   else ffile("autosave → "+h.name+" ✓ linked",true)
- }catch(e){ffile("autosave → "+h.name+" (empty) ✓",true)}
-}catch(e){}}
+ const run=RUNID,generation=runGeneration;const h=await idbGet("fh:"+run);if(!h||generation!==runGeneration)return;
+ const p=await h.queryPermission({mode:"readwrite"});
+ if(p!=="granted"){fileStatus("relink required for this run",false);return}
+ if(generation!==runGeneration)return;fh=h;fileStatus(h.name+" linked; no new save yet",true);
+}catch(e){fileStatus("could not reconnect — link a backup file",false)}}
 
 /* ================= RUN / MONTH CONFIG =================
    The period is no longer baked into this file. It lives in Firestore at
@@ -271,20 +482,31 @@ function paintPeriod(){if(!PERIOD)return;
  const f=document.getElementById("pgFile");if(f)f.textContent="File: "+PERIOD.label+" Payroll \u2192 Timesheet entry";}
 
 function applyPeriod(p){
+ stopRunSession();fh=null;fileStatus("not linked for this run",false);
  PERIOD=p;RUNID=p.id;KEY="buzz-"+p.id+"-ts-v1";DATA.days=(p.days&&p.days.length)?p.days:FALLBACK_PERIOD.days;
- try{st=JSON.parse(localStorage.getItem(KEY)||"{}")}catch(e){st={}}
- try{cur=localStorage.getItem(KEY+"-tab")||"Team A"}catch(e){cur="Team A"}
- lastSnap=JSON.stringify(st);paintPeriod();snapUI();renderTabs();renderList()}
+ try{const cached=localStorage.getItem(KEY);st=JSON.parse(cached||"{}");statusText("fsave",cached?"Device: saved copy loaded":"Device: no saved copy for this run")}catch(e){st={};statusText("fsave","Device: saved copy could not be read","error")}
+ try{cur=localStorage.getItem(KEY+"-tab")||"__OVERVIEW__"}catch(e){cur="__OVERVIEW__"}
+ undoStack=[];redoStack=[];lastSnap=JSON.stringify(st);paintPeriod();snapUI();renderTabs();renderList();
+ if(window.showSaveFilePicker)reconnect();
+ return loadRoster()}
 
-function loadPeriod(){
- if(!FB||!fbUser){applyPeriod(FALLBACK_PERIOD);return Promise.resolve()}
- return FB.collection("runs").doc("_periods").get()
-  .then(d=>{PERIODS=(d.exists&&d.data().list)||[];return FB.collection("runs").doc("_current").get()})
-  .then(d=>{const id=(d.exists&&d.data().run)||null;
-    const p=PERIODS.filter(x=>x.id===id)[0]||PERIODS[PERIODS.length-1]||FALLBACK_PERIOD;
-    applyPeriod(p);
-    if(!PERIODS.length)ffile("no run configured yet \u2014 press \u2699 Run / month to set one up",false)})
-  .catch(e=>{ffile("run config load failed: "+e.code+" \u2014 using "+FALLBACK_PERIOD.label,false);applyPeriod(FALLBACK_PERIOD)})}
+async function loadPeriod(){
+ if(!FB||!fbUser)return;
+ stopRunSession();rosterLoading=true;
+ const generation=runGeneration,user=fbUser;
+ cloudStatus("loading payroll run…");renderTabs();renderList();
+ try{
+  const [registry,current]=await withLoadTimeout(Promise.all([
+   FB.collection("runs").doc("_periods").get(),FB.collection("runs").doc("_current").get()
+  ]));
+  if(generation!==runGeneration||user!==fbUser)return;
+  PERIODS=(registry.exists&&registry.data().list)||[];
+  const id=current.exists&&current.data().run;
+  const p=PERIODS.find(x=>x.id===id);
+  if(!p)throw new Error("No active payroll run could be loaded. Check Run / month or retry.");
+  await applyPeriod(p);
+ }catch(e){if(generation===runGeneration)runLoadFailed(e)}
+}
 
 function savePeriod(p,copyFrom){
  const list=PERIODS.filter(x=>x.id!==p.id).concat([p]);
@@ -316,6 +538,7 @@ function rsPaint(){const g=document.getElementById("rsGrid");if(!g)return;
  g.innerHTML=h}
 
 function runPanel(){
+ if(cloudPending||cloudWriting||cloudConflict){ffile("Finish syncing this run or download a backup and resolve its device changes before switching runs.",false);return}
  if(!fbUser){alert("Sign in first \u2014 the run config lives in the cloud so every phone gets the same one.");return}
  const old=document.getElementById("runOv");if(old)old.remove();
  const p=PERIOD||FALLBACK_PERIOD;
@@ -361,7 +584,7 @@ function runPanel(){
   const id=document.getElementById("rsSel").value;
   const t=PERIODS.filter(x=>x.id===id)[0];if(!t){alert("That run isn\'t saved yet.");return}
   FB.collection("runs").doc("_current").set({run:id,by:fbUser.email,at:new Date().toISOString()})
-   .then(()=>{applyPeriod(t);ov.remove();ffile("switched to "+t.label+" \u2713",true)})
+   .then(()=>{ov.remove();applyPeriod(t);ffile("Loading "+t.label+"…",true)})
    .catch(err=>alert("Switch failed: "+err.code))};
  ov.addEventListener("click",ev=>{
   const a=ev.target.closest("[data-rsd]");
@@ -397,7 +620,7 @@ const FRL_MAX=3;
 function frlPaid(e){const s=emp(e.c),f=counts(e).F;if(!f)return 0;
  return(s.frl!==undefined&&s.frl!=="")?Math.max(0,Math.min(+s.frl,f)):Math.min(f,FRL_MAX)}
 let st={};try{st=JSON.parse(localStorage.getItem(KEY)||"{}")}catch(e){st={}}
-let cur="Team A";try{cur=localStorage.getItem(KEY+"-tab")||"Team A"}catch(e){}
+let cur="__OVERVIEW__";try{cur=localStorage.getItem(KEY+"-tab")||"__OVERVIEW__"}catch(e){}
 const $=s=>document.querySelector(s);
 function emp(c){if(c&&c[0]==="_")c="_x";if(!st[c])st[c]={d:{},tally:"",note:"",done:false};return st[c]}
 function dayVal(e,d){const s=emp(e.c);if(s.d[d.d])return s.d[d.d];if(e.nopay&&!d.lock&&(d.def==="W"||d.def==="PH"))return"A";return d.def}
@@ -421,24 +644,17 @@ function counts(e){const r={W:0,A:0,S:0,L:0,F:0,R:0,PH:0,PHW:0,PhA:0,PhP:0};DATA
  const v=dayVal(e,d);if(r[v]!==undefined)r[v]++});return r}
 let undoStack=[],redoStack=[],lastSnap=null;
 function snapUI(){const u=document.getElementById("undoB");if(u){u.textContent="↶ Undo ("+undoStack.length+")";u.style.opacity=undoStack.length?1:.45}const r=document.getElementById("redoB");if(r)r.style.opacity=redoStack.length?1:.45}
-function save(noHist){st._ts=Date.now();
+function save(noHist){st._ts=Math.max(Date.now(),(st._ts||0)+1);
  if(!noHist&&lastSnap!==null){undoStack.push(lastSnap);if(undoStack.length>100)undoStack.shift();redoStack.length=0}
  lastSnap=JSON.stringify(st);
- try{localStorage.setItem(KEY,JSON.stringify(st))}catch(e){};queueWrite();cloudPush();snapUI();const f=$("#fsave");f.textContent="saved ✓ "+new Date().toLocaleTimeString();}
+ persistDevice();queueWrite();cloudPush();snapUI();}
 function teamList(){return [...new Set(EMPS().map(e=>e.t))]}
 function teamProg(t){const es=EMPS().filter(e=>e.t===t);return[es.filter(e=>emp(e.c).done).length,es.length]}
-function renderTabs(){const n=$("#tabs");n.innerHTML="";if(SIGNMODE){cur="__SIG__";const b=document.createElement("button");b.className="on";b.innerHTML="✍ Payslip hand-out — signing only";n.appendChild(b);const done=Object.keys(st._sig||{}).length;const i=document.createElement("button");i.innerHTML=done+" signed";n.appendChild(i);return}teamList().forEach(t=>{const[d,tot]=teamProg(t);const b=document.createElement("button");b.className=t===cur?"on":"";b.innerHTML=t+' <span class="tb">'+d+"/"+tot+"</span>";b.onclick=()=>{cur=t;try{localStorage.setItem(KEY+"-tab",t)}catch(e){};renderTabs();renderList()};n.appendChild(b)});
-const sbn=Object.values(st._sb||{}).filter(x=>+x.d>0).length;
-const sb=document.createElement("button");sb.className=cur==="__SB__"?"on":"";sb.innerHTML='⚡ Standby <span class="tb">'+sbn+"/"+DATA.standby.length+"</span>";sb.onclick=()=>{cur="__SB__";try{localStorage.setItem(KEY+"-tab",cur)}catch(e){};renderTabs();renderList()};n.appendChild(sb);
-const dn=Object.values(st._ded||{}).filter(x=>(+x.l||+x.f||+x.o)).length;
-const pb=document.createElement("button");pb.className=cur==="__PHIL__"?"on":"";pb.innerHTML='📋 For Phil';pb.onclick=()=>{cur="__PHIL__";try{localStorage.setItem(KEY+"-tab",cur)}catch(e){};renderTabs();renderList()};n.appendChild(pb);
-const lb=document.createElement("button");lb.className=cur==="__LED__"?"on":"";lb.innerHTML='📒 Ledger';lb.onclick=()=>{cur="__LED__";try{localStorage.setItem(KEY+"-tab",cur)}catch(e){};renderTabs();ledLoad();renderList()};n.appendChild(lb);
-const sgn=Object.keys((st._sig||{})).length;
-const sg=document.createElement("button");sg.className=cur==="__SIG__"?"on":"";sg.innerHTML='✍ Receipts <span class="tb">'+sgn+'</span>';sg.onclick=()=>{cur="__SIG__";try{localStorage.setItem(KEY+"-tab",cur)}catch(e){};renderTabs();renderList()};n.appendChild(sg);
-const db=document.createElement("button");db.className=cur==="__DED__"?"on":"";db.innerHTML='💸 Deductions <span class="tb">'+dn+'</span>';db.onclick=()=>{cur="__DED__";try{localStorage.setItem(KEY+"-tab",cur)}catch(e){};renderTabs();renderList()};n.appendChild(db);
-if(window.EMPUI){const eb=document.createElement("button");eb.className=cur==="__EMP__"?"on":"";eb.innerHTML='👤 Employees';eb.onclick=()=>{cur="__EMP__";try{localStorage.setItem(KEY+"-tab",cur)}catch(e){};renderTabs();renderList()};n.appendChild(eb);}
-if(window.PAYPRINTUI&&fbUser){const pp=document.createElement("button");pp.className=cur==="__PAYPRINT__"?"on":"";pp.textContent="Payslips & calendars";pp.onclick=async()=>{pp.disabled=true;if(window.EMPUI&&EMPUI.load)await EMPUI.load();cur="__PAYPRINT__";renderTabs();renderList()};n.appendChild(pp);}
-const done=EMPS().filter(e=>emp(e.c).done).length;$("#pbar").style.width=(100*done/EMPS().length)+"%";$("#ptxt").textContent=done+" / "+EMPS().length+" employees done"}
+function renderTabs(){
+ if(window.PayrollWorkspace)PayrollWorkspace.renderTabs();
+ const ready=rosterLoaded&&runReady;
+ ["exCsv","exCopy","reset","undoB","redoB","imJson"].forEach(id=>{const el=document.getElementById(id);if(el)el.disabled=!ready});
+}
 function chipHtml(e){const s=emp(e.c);let ex="";if(ot15Tot(e)||ot2Tot(e))ex+='<span class="chip L">OT'+((ot15Tot(e)||0)+(ot2Tot(e)||0))+'h</span>';if(+s.bpA)ex+='<span class="chip '+(+s.bpA<0?"A":"S")+'">R'+(+s.bpA).toFixed(0)+'</span>';
 const c=counts(e);if(e.fx)return ex+'<span class="fx">FIXED — salaried</span>'+(c.PHW?'<span class="chip PHW">PHW '+c.PHW+'</span>':"");let h=ex+'<span class="chip W">'+c.W+'d</span>'+(c.PhP?'<span class="chip L" title="partial days — payable hrs (min-4h rule)">+'+c.PhP+'h</span>':'')+'<span class="chip PH">PH '+(c.PH||c.PHW)+(c.PHW?"·worked":"")+'</span>';
 if(c.S)h+='<span class="chip S">S'+c.S+'</span>';if(c.L)h+='<span class="chip L">L'+c.L+'</span>';if(c.F){const fp=frlPaid(e);h+='<span class="chip L" style="background:#e0e7ff;color:#312e81" title="funeral / family responsibility: '+c.F+' away, '+fp+' paid">F'+c.F+(fp<c.F?' · '+fp+' paid':'')+'</span>'}if(c.A)h+='<span class="chip A">A'+c.A+'</span>';return h}
@@ -458,7 +674,8 @@ const editSet=new Set();
 function renderCard(e){const s=emp(e.c);const card=document.createElement("div");card.className="card"+(s.done?" done":"")+(e.nopay?" nopay":"")+(openSet.has(e.c)?" open":"");
 let h='<div class="ehead" data-open="'+e.c+'"><span class="code">'+e.c+'</span><span class="name">'+e.n+(e.alias?' <small style="color:var(--mut)">(paper: '+e.alias+')</small>':"")+'</span><span class="chips">'+chipHtml(e)+'</span>';
 if(!e.fx)h+='<input class="tally" type="number" min="0" max="24" placeholder="tally" value="'+(s.tally??"")+'" data-tally="'+e.c+'" title="days per paper tally" onclick="event.stopPropagation()"><span class="match">'+matchIcon(e)+'</span>';
-h+='<button class="mini" data-edit="'+e.c+'" onclick="event.stopPropagation()" title="edit employee">✎</button><label class="dn" onclick="event.stopPropagation()"><input type="checkbox" data-done="'+e.c+'" '+(s.done?"checked":"")+'>done</label></div>';
+h+='<button class="mini" data-edit="'+e.c+'" onclick="event.stopPropagation()" title="edit employee">✎</button><label class="dn" onclick="event.stopPropagation()"><input type="checkbox" data-done="'+e.c+'" '+(s.done?"checked":"")+'>Reviewed</label></div>';
+h+=EmploymentReview.banner(e.c);
 if(e.f)h+='<div class="flag'+(e.nopay?" red":"")+'">⚑ '+e.f+'</div>';
 if(editSet.has(e.c))h+=edForm(e);
 h+='<div class="body">'+(e.fx?'<div style="font-size:12.5px;color:var(--mut);padding:6px 0">Salaried — Basic Salary remains fixed. Record PHW in the calendar; use the note for other exceptions.</div>':"")+gridHtml(e)+((window._dp&&window._dp.c===e.c)?dpForm(e):"")+
@@ -500,7 +717,7 @@ function dedGet(c){if(!st._ded)st._ded={};if(!st._ded[c])st._ded[c]={};return st
 function philRows(){return EMPS().map(e=>{const c=counts(e);const s=emp(e.c);const d=(st._ded||{})[e.c]||{};
  const sx=sbX(e.c);const sd=sx?sbDays(sx):0;const sr=sx?sbRate(sx):"";const stot=sd?(sd*sr):0;
  return {c:e.c,n:e.n,fx:e.fx,days:e.fx?"":c.W,ph:e.fx?"":c.PH,phw:c.PHW,part:e.fx?"":(c.PhP||""),o15:ot15Tot(e)||"",o2:ot2Tot(e)||"",sick:e.fx?"":(c.S||""),lv:e.fx?"":(c.L||""),fn:e.fx?"":(frlPaid(e)||""),sd:sd||"",sr:sd?sr:"",stot:sd?stot.toFixed(2):"",bp:s.bpA||"",bpw:s.bpWhy||"",loan:d.l||"",fuel:d.f||"",oth:d.o||"",
-  note:[s.note||"",d.w||"",(!e.fx&&c.F>frlPaid(e))?("funeral: "+c.F+" days away, "+frlPaid(e)+" paid FRL, "+(c.F-frlPaid(e))+" unpaid"):""].filter(Boolean).join(" · ")}})}
+  note:[s.note||"",d.w||"",EmploymentReview.note(e.c),(!e.fx&&c.F>frlPaid(e))?("funeral: "+c.F+" days away, "+frlPaid(e)+" paid FRL, "+(c.F-frlPaid(e))+" unpaid"):""].filter(Boolean).join(" · ")}})}
 /* Which document kinds are on file for a person this run. Read from the change log (every upload logs
    FILE-ATTACH with its kind), so no file data has to be downloaded to check. */
 function docKinds(code){const k={};(st._log||[]).forEach(x=>{if(x.c===code&&x.f==="FILE-ATTACH")k[x.o]=1});return k}
@@ -522,7 +739,7 @@ function philSpecifics(){
  });return out}
 function renderPhil(L){
  const rows=philRows();const num=k=>rows.reduce((a,r)=>a+(+r[k]||0),0);const sp=philSpecifics();
- let h='<div class="banner noprint">📋 This page IS the deliverable — <b>🖨 Print → Save as PDF (Landscape)</b> and send that to Phil; generated live from the entered data. <button class="mini" id="philCopy" style="background:#0f766e;color:#fff">⧉ Copy for Phil</button> <button class="mini" onclick="window.print()">🖨 Print / Save as PDF</button></div>';
+ let h='<div class="banner noprint">📋 This page IS the deliverable — <b>🖨 Print → Save as PDF (Landscape)</b> and send that to Phil; generated live from the entered data. <button class="mini" id="philCopy" style="background:#0f766e;color:#fff">⧉ Copy for Phil</button> <button class="mini" id="philPrint">🖨 Print / Save as PDF</button></div>';
  h+='<div class="prephead"><h2>BUZZTREE (PTY) LTD — '+(PERIOD?PERIOD.label.toUpperCase():"")+' PAYRUN · Sage Pastel keying sheet</h2>'
   +'<div class="pline">'+PSUBTXT()+'</div>'
   +'<div class="pline">Generated live from the Buzztree timesheet app · '+new Date().toLocaleString()+' · signed in: '+(fbUser?fbUser.email:"—")+' · all entries audit-logged</div>'
@@ -539,13 +756,14 @@ function renderPhil(L){
   +(sp.zero.length?'<b class="h">Zero pay (no days, no PH):</b> '+sp.zero.join(", "):"")
   +'<b class="h">Standby rates:</b> general R62.65/day (June-corrections basis) · drivers R114.765 — amounts per person in the table.</div>';
  h+='<div class="ptwrap"><table class="ptable"><thead><tr><th>Code</th><th>Employee</th><th>Basis</th><th>Days</th><th>PH</th><th>PHW</th><th>Part hrs</th><th>OT1.5 h</th><th>OT2 h</th><th>Sick</th><th>Leave</th><th>Funeral</th><th>Stby d</th><th>Stby rate</th><th>Stby R</th><th>Backpay R</th><th>Backpay reason</th><th>Loan ded R</th><th>Fuel ded R</th><th>Other ded R</th><th>Note</th></tr></thead><tbody>';
- rows.forEach(r=>{h+='<tr><td><b>'+r.c+'</b></td><td>'+r.n+'</td><td>'+(r.fx?"SALARIED":"daily")+'</td><td>'+r.days+'</td><td>'+r.ph+'</td><td>'+r.phw+'</td><td>'+r.part+'</td><td>'+r.o15+'</td><td>'+r.o2+'</td><td>'+r.sick+'</td><td>'+r.lv+'</td><td>'+r.fn+'</td><td>'+r.sd+'</td><td>'+r.sr+'</td><td>'+r.stot+'</td><td>'+r.bp+'</td><td>'+r.bpw+'</td><td>'+r.loan+'</td><td>'+r.fuel+'</td><td>'+r.oth+'</td><td>'+r.note+'</td></tr>'});
+ rows.forEach(r=>{h+='<tr><td><b>'+r.c+'</b></td><td>'+r.n+'</td><td>'+(r.fx?"SALARIED":"daily")+'</td><td>'+r.days+'</td><td>'+r.ph+'</td><td>'+r.phw+'</td><td>'+r.part+'</td><td>'+r.o15+'</td><td>'+r.o2+'</td><td>'+r.sick+'</td><td>'+r.lv+'</td><td>'+r.fn+'</td><td>'+r.sd+'</td><td>'+r.sr+'</td><td>'+r.stot+'</td><td>'+r.bp+'</td><td>'+r.bpw+'</td><td>'+r.loan+'</td><td>'+r.fuel+'</td><td>'+r.oth+'</td><td>'+ledEsc(r.note)+'</td></tr>'});
  h+='<tr class="tot"><td colspan="3">TOTALS</td><td>'+num("days")+'</td><td>'+num("ph")+'</td><td>'+num("phw")+'</td><td>'+num("part")+'</td><td>'+num("o15")+'</td><td>'+num("o2")+'</td><td>'+num("sick")+'</td><td>'+num("lv")+'</td><td>'+num("fn")+'</td><td>'+num("sd")+'</td><td></td><td>'+num("stot").toFixed(2)+'</td><td>'+num("bp").toFixed(2)+'</td><td></td><td>'+num("loan").toFixed(2)+'</td><td>'+num("fuel").toFixed(2)+'</td><td>'+num("oth").toFixed(2)+'</td><td></td></tr></tbody></table></div>';
  h+='<div class="psig"><span>Prepared: Byron (Buzztree) ______________</span><span>Captured in Pastel: Phil ______________</span><span>Date: ____________</span></div>';
  const dv=document.createElement("div");dv.innerHTML=h;L.appendChild(dv);
- dv.querySelector("#philCopy").onclick=()=>{const H=["Code","Employee","Basis","Days","PH","PHW","PartHrs","OT1.5h","OT2h","Sick","Leave","Funeral","StbyDays","StbyRate","StbyR","BackpayR","BackpayReason","LoanDedR","FuelDedR","OtherDedR","Note"];
+ dv.querySelector("#philPrint").onclick=()=>EmploymentReview.guard(()=>window.print());
+ dv.querySelector("#philCopy").onclick=()=>EmploymentReview.guard(()=>{const H=["Code","Employee","Basis","Days","PH","PHW","PartHrs","OT1.5h","OT2h","Sick","Leave","Funeral","StbyDays","StbyRate","StbyR","BackpayR","BackpayReason","LoanDedR","FuelDedR","OtherDedR","Note"];
   const tsv=[H.join("\t")].concat(philRows().map(r=>[r.c,r.n,(r.fx?"SALARIED":"daily"),r.days,r.ph,r.phw,r.part,r.o15,r.o2,r.sick,r.lv,r.fn,r.sd,r.sr,r.stot,r.bp,r.bpw,r.loan,r.fuel,r.oth,r.note].join("\t"))).join("\n");
-  navigator.clipboard.writeText(tsv).then(()=>alert("Keying sheet copied — paste into Excel / email for Phil"))};}
+  navigator.clipboard.writeText(tsv).then(()=>alert("Keying sheet copied — paste into Excel / email for Phil"))});}
 let LED=null,ledBusy=false;
 function ledEsc(v){return String(v==null?"":v).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
 function ledgerSummary(entries,deductions){
@@ -599,7 +817,7 @@ function fileUpload(code,kind,file,day){const e=EMPS().find(x=>x.c===code);const
    const du=cv.toDataURL("image/jpeg",0.72);fin("image/jpeg",du.split(",")[1])};img.src=URL.createObjectURL(file)}
  else{if(file.size>700000){alert("PDF too big ("+Math.round(file.size/1024)+"KB) — keep under 700KB or photograph the page instead");return}
   const r=new FileReader();r.onload=()=>fin(file.type||"application/pdf",String(r.result).split(",")[1]);r.readAsDataURL(file)}}
-function filesPanel(e){let h='<div style="background:#fefce8;border:1px solid #facc15;border-radius:8px;padding:10px;margin-top:8px;font-size:12.5px" data-fpp="1"><b>📎 Files — '+e.c+'</b> (sick notes, signed loan forms; auto-labelled '+e.c+'_Name per filing rule)<br>';
+function filesPanel(e){let h='<div style="background:#fefce8;border:1px solid #facc15;border-radius:8px;padding:10px;margin-top:8px;font-size:12.5px" data-fpp="1"><b>📎 Files — '+e.c+'</b> (sick notes, signed loan forms; auto-labelled '+e.c+'_Name per filing rule)<br><p>Saved in this app’s cloud under this employee and payroll month. Not sent to Phil or filed in OneDrive/Papertrail. JSON backups do not include these documents.</p>';
  h+='<div style="display:flex;gap:8px;align-items:center;margin:6px 0"><select id="fp_kind"><option value="sick-note">Sick note</option><option value="funeral-doc">Funeral letter / death certificate</option><option value="loan-doc">Loan document</option><option value="other">Other</option></select><select id="fp_day" title="which day this document covers"><option value="">(no specific day)</option>'+DATA.days.filter(d=>{const v=dayVal(e,d);return v==="S"||v==="F"||v==="A"}).map(d=>'<option value="'+d.d+'">'+d.w+" "+d.lbl+" ("+dayVal(e,d)+")</option>").join("")+'</select><input type="file" id="fp_file" accept="image/*,.pdf" capture="environment"><button class="mini" data-fpclose="1">Close</button></div>';
  if(FPL===null)h+='<i>loading…</i>';else if(!FPL.length)h+='<i>no files yet</i>';
  else FPL.forEach(f=>{h+='<div class="frow"><span>'+(f.kind||"")+(f.day?" · "+f.day.slice(8)+"/"+f.day.slice(5,7):"")+'</span><a href="#" data-fview="'+f.id+'">'+f.name+'</a><span style="margin-left:auto;color:var(--mut)">'+(f.at||"").slice(0,10)+'</span></div>'});
@@ -702,18 +920,35 @@ function bulkButton(host){
   catch(e){b.disabled=false;b.textContent="Bulk edit attendance";alert(e.message)}
  };
 }
+let payprintLoading=null;
+function renderPayslipsWhenReady(L){
+ if(!window.PAYPRINTUI||!fbUser||SIGNMODE)return;
+ if(!window.EMPUI||EMPUI._state.loaded){PAYPRINTUI.render(L,printSnapshot);return}
+ L.innerHTML='<div class="banner"><p id="payslipLoadMessage">Loading employee dates for payslip checks…</p><button class="mini" id="payslipLoadRetry">Retry loading employee records</button></div>';
+ const button=L.querySelector("#payslipLoadRetry"),message=L.querySelector("#payslipLoadMessage"),run=RUNID,user=fbUser;
+ const start=async()=>{
+  if(payprintLoading){message.textContent="Employee records are already loading. Retry shortly.";return}
+  button.disabled=true;payprintLoading=withLoadTimeout(EMPUI.load());
+  try{await payprintLoading;
+   if(RUNID!==run||fbUser!==user||cur!=="__PAYPRINT__")return;
+   if(EMPUI._state.loaded)renderList();else message.textContent="Employee records could not be loaded. Retry before checking payslips.";
+  }catch(e){if(message.isConnected)message.textContent="Employee records took too long to load. Retry when connected."}
+  finally{payprintLoading=null;if(button.isConnected)button.disabled=false}
+ };
+ button.onclick=start;start();
+}
 function renderList(){const L=$("#list");L.innerHTML="";
+ if(window.PayrollWorkspace)PayrollWorkspace.viewChanged();
  if(SIGNMODE&&rosterLoaded){cur="__SIG__"}
- if(!rosterLoaded){
-  if(rosterMissing&&fbUser){L.innerHTML='<div class="banner"><b>First run — seed the roster.</b> Paste the contents of <code>ROSTER-SEED_paste-once.json</code> (from the cockpit folder — NEVER commit it to GitHub):<br><textarea id="seedT" style="width:100%;height:120px;margin:8px 0"></textarea><button class="mini" id="seedB" style="background:#0f766e;color:#fff">Seed roster</button></div>';
-   const b=L.querySelector("#seedB");b.onclick=()=>seedRoster(L.querySelector("#seedT").value);return}
-  L.innerHTML='<div class="banner">🔑 '+(window.__FBCONFIG&&window.__FBCONFIG.apiKey?(fbUser?"Loading roster…":"Sign in with Google (top right) to load the roster and entries."):"Waiting for config.js — see _SETUP-FOR-BYRON.md.")+'</div>';return}
+ if(cur==="__EMP__"&&!SIGNMODE&&fbUser){if(window.EMPUI)EMPUI.render(L);return}
+ if(!rosterLoaded||!runReady){if(window.PayrollWorkspace)PayrollWorkspace.renderUnavailable(L);renderRosterCopy(L);return}
+ if(cur==="__OVERVIEW__"){PayrollWorkspace.renderOverview(L);return}
  if(cur==="__SIG__"){renderReceipts(L);return}
  if(cur==="__PHIL__"){renderPhil(L);return}
  if(cur==="__LED__"){renderLedger(L);return}
  if(cur==="__DED__"){renderDeductions(L);return}
  if(cur==="__EMP__"){if(window.EMPUI)EMPUI.render(L);return}
- if(cur==="__PAYPRINT__"){if(window.PAYPRINTUI&&fbUser&&!SIGNMODE)PAYPRINTUI.render(L,printSnapshot);return}
+ if(cur==="__PAYPRINT__"){renderPayslipsWhenReady(L);return}
  if(cur==="__SB__"){renderStandby(L);return}bulkButton(L);EMPS().filter(e=>e.t===cur).forEach(e=>L.appendChild(renderCard(e)));
  const d=document.createElement("div");d.innerHTML=editSet.has("__new__")?edForm(null):'<button class="mini" data-eadd="1" style="margin:6px 0 14px">＋ Add employee to '+cur+'</button>';L.appendChild(d)}
 document.addEventListener("click",ev=>{
@@ -824,15 +1059,16 @@ document.addEventListener("click",ev=>{
 });
 function rows(){return EMPS().map(e=>{const c=counts(e);const s=emp(e.c);
  const ds=DATA.days.map(d=>{const ph=pHrs(e,d);const s3=emp(e.c);const o=((s3.o15||{})[d.d]?("+OT1.5:"+s3.o15[d.d]+"h"):"")+((s3.o2||{})[d.d]?("+OT2:"+s3.o2[d.d]+"h"):"");return d.lbl.replace(" ","")+"="+(ph!==null?("P"+ph+"h>"+payHrs(ph)+"h"):dayVal(e,d))+o}).join(";");
- return[e.t,e.c,e.n,e.fx?"FIXED":"DAILY",(e.added?"ADDED":(e.ed&&Object.keys(e.ed).length?"EDITED":"")),(e.ed&&e.ed.why)||"",s.tally||"",e.fx?"":c.W,e.fx?"":c.PH,c.PHW,e.fx?"":c.S,e.fx?"":c.L,e.fx?"":(frlPaid(e)||""),e.fx?"":(c.A+c.F-frlPaid(e)),e.fx?"":c.R,e.fx?"":(c.PhA||""),e.fx?"":(c.PhP||""),(ot15Tot(e)||""),(ot2Tot(e)||""),(s.bpA||""),(s.bpWhy||""),(((st._ded||{})[e.c]||{}).l||""),(((st._ded||{})[e.c]||{}).f||""),(((st._ded||{})[e.c]||{}).o||""),(((st._ded||{})[e.c]||{}).w||""),(s.note||""),s.done?"YES":"",sbD(e.c),sbR2(e.c),sbT(e.c),e.fx?"":ds]})}
+ return[e.t,e.c,e.n,e.fx?"FIXED":"DAILY",(e.added?"ADDED":(e.ed&&Object.keys(e.ed).length?"EDITED":"")),(e.ed&&e.ed.why)||"",s.tally||"",e.fx?"":c.W,e.fx?"":c.PH,c.PHW,e.fx?"":c.S,e.fx?"":c.L,e.fx?"":(frlPaid(e)||""),e.fx?"":(c.A+c.F-frlPaid(e)),e.fx?"":c.R,e.fx?"":(c.PhA||""),e.fx?"":(c.PhP||""),(ot15Tot(e)||""),(ot2Tot(e)||""),(s.bpA||""),(s.bpWhy||""),(((st._ded||{})[e.c]||{}).l||""),(((st._ded||{})[e.c]||{}).f||""),(((st._ded||{})[e.c]||{}).o||""),(((st._ded||{})[e.c]||{}).w||""),[s.note||"",EmploymentReview.note(e.c)].filter(Boolean).join(" · "),s.done?"YES":"",sbD(e.c),sbR2(e.c),sbT(e.c),e.fx?"":ds]})}
 function sbX(c){return sbList().find(y=>y.c===c)}
 function sbD(c){const x=sbX(c);if(!x)return"";return sbDays(x)||""}
 function sbR2(c){const x=sbX(c);return x?sbRate(x):""}
 function sbT(c){const x=sbX(c);if(!x)return"";const d=sbDays(x);return d?(d*sbRate(x)).toFixed(2):""}
 const HDR=["Team","Code","Name","Type","Edited","EditReason","PaperTally","DAYS_Worked","PH","PHW","Sick","Leave","FuneralPaid","AbsentNoPay","RainNoPay","PartialHrsActual","PartialHrsPayable","OT15h","OT2h","BackpayR","BackpayReason","LoanDeductR","FuelDeductR","OtherDeductR","DeductReason","Note","Done","StandbyDays","StandbyRate","StandbyTotal","DayDetail"];
-$("#exCsv").onclick=()=>{const csv=[HDR,...rows()].map(r=>r.map(x=>'"'+String(x).replace(/"/g,'""')+'"').join(",")).join("\r\n");
- const a=document.createElement("a");a.href=URL.createObjectURL(new Blob(["﻿"+csv],{type:"text/csv"}));a.download=PFILE()+"_Timesheet_Entry_EXPORT_"+new Date().toISOString().slice(0,10)+".csv";a.click()};
-$("#exCopy").onclick=()=>{const t=[HDR.slice(0,14),...rows().map(r=>r.slice(0,14))].map(r=>r.join("\t")).join("\n");navigator.clipboard.writeText(t).then(()=>alert("Summary copied — paste into Excel/chat"))};
+$("#exCsv").onclick=()=>EmploymentReview.guard(()=>{const csv=[HDR,...rows()].map(r=>r.map(x=>'"'+String(x).replace(/"/g,'""')+'"').join(",")).join("\r\n");
+ const a=document.createElement("a");a.href=URL.createObjectURL(new Blob(["﻿"+csv],{type:"text/csv"}));a.download=PFILE()+"_Timesheet_Entry_EXPORT_"+new Date().toISOString().slice(0,10)+".csv";a.click()});
+$("#exCopy").onclick=()=>EmploymentReview.guard(()=>{const t=[HDR.slice(0,14),...rows().map(r=>r.slice(0,14))].map(r=>r.join("\t")).join("\n");navigator.clipboard.writeText(t).then(()=>alert("Summary copied — paste into Excel/chat"))});
+$("#employmentCheck").hidden=SIGNMODE;$("#employmentCheck").onclick=()=>EmploymentReview.guard();
 $("#exJson").onclick=()=>{const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([JSON.stringify(Object.assign({},st,{_period:periodMeta()}))],{type:"application/json"}));a.download=PFILE()+"_timesheet_backup.json";a.click()};
 $("#imJson").onclick=()=>$("#jfile").click();
 $("#jfile").onchange=ev=>{const f=ev.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{let j;try{j=JSON.parse(r.result)}catch(e){alert("Not a valid backup");return}
@@ -847,17 +1083,20 @@ document.addEventListener("keydown",e=>{const tg=e.target.tagName;if(tg==="INPUT
  if(e.ctrlKey&&!e.shiftKey&&e.key.toLowerCase()==="z"){e.preventDefault();undoAct()}
  if((e.ctrlKey&&e.key.toLowerCase()==="y")||(e.ctrlKey&&e.shiftKey&&e.key.toLowerCase()==="z")){e.preventDefault();redoAct()}});
 document.getElementById("linkF").onclick=linkFile;
+document.getElementById("retryCloud").onclick=cloudPush;
+document.getElementById("reviewCloud").onclick=reviewSyncConflict;
 document.getElementById("runB").onclick=runPanel;
 document.getElementById("holidayB").onclick=()=>RunHolidays.open({
  current:()=>({period:PERIOD,db:FB,user:fbUser,signOnly:SIGNMODE}),entries:()=>st,
  saved:result=>{PERIOD=result.period;PERIODS=result.list;DATA.days=PERIOD.days;paintPeriod();renderList();queueWrite()},
  message:ffile
 });
-if(window.showSaveFilePicker){reconnect()}else{ffile("this browser can't autosave to file — use Copy backup",false)}
+if(!window.showSaveFilePicker)fileStatus("automatic file backups unavailable — use Download backup",false);
+if(window.PayrollWorkspace)PayrollWorkspace.init();
 lastSnap=JSON.stringify(st);snapUI();cloudInit();
 renderTabs();renderList();
 // ---- Companion-style offline-first (PWA): app shell cached, cold-start works in a dead zone ----
-const APP_VERSION="runs-v26-public-holidays";
+const APP_VERSION="runs-v27-payroll-workspace";
 if("serviceWorker" in navigator&&location.protocol==="https:"){
  navigator.serviceWorker.register("sw.js").then(reg=>{
   reg.addEventListener("updatefound",()=>{const w=reg.installing;if(!w)return;
@@ -867,9 +1106,9 @@ if("serviceWorker" in navigator&&location.protocol==="https:"){
     document.body.appendChild(n)}})});
  }).catch(()=>{});
 }
-window.addEventListener("offline",()=>ffile("OFFLINE \u2014 working from this device; signatures & edits queue and sync when signal returns \u2713",true));
-window.addEventListener("online",()=>ffile("back online \u2014 syncing \u2713",true));
-if(!navigator.onLine)ffile("OFFLINE \u2014 working from this device; entries queue and sync when signal returns \u2713",true);
+window.addEventListener("offline",()=>cloudStatus("offline — cloud sync is not confirmed","warn"));
+window.addEventListener("online",()=>{cloudStatus("connection restored — checking sync…","warn");if(cloudPending)cloudPush();else if(!runReady)reloadRun()});
+if(!navigator.onLine)cloudStatus("offline — connect to load the shared run","warn");
 </script>
 </body>
 </html>

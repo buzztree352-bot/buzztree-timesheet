@@ -26,7 +26,7 @@ function verifyPhw(html) {
   const saveBody=take(' const dps=ev.target.closest("[data-dpsave]")',' const sb=ev.target.closest("[data-esave]")');
   const contextBody=take(' const e=EMPS().find(x=>x.c===c.dataset.emp);if(!e)','document.addEventListener("change"').replace(/\}\);\s*$/,"");
   const api=new Function("DATA","st","window","document","EMPS","logEdit","alert","save","renderTabs","renderList",
-    'const openSet=new Set(),editSet=new Set(),FPC=null,FRL_MAX=3;const sbX=()=>null,sbD=()=>"",sbR2=()=>"",sbT=()=>"";'+core+
+    'const EmploymentReview={note:()=>"",banner:()=>""};const openSet=new Set(),editSet=new Set(),FPC=null,FRL_MAX=3;const sbX=()=>null,sbD=()=>"",sbR2=()=>"",sbT=()=>"";'+core+
     ';return {emp,counts,philRows,rows,dpForm,renderCard,chipHtml,gridHtml,saveDay:function(ev){'+saveBody+
     '},openDay:function(c){'+contextBody+'}};')(
       DATA,st,win,doc,()=>people,(...x)=>logs.push(x),x=>alerts.push(x),()=>saves++,()=>{},()=>{});
@@ -61,3 +61,4 @@ function verifyPhw(html) {
 }
 const html = fs.readFileSync(path.join(__dirname, "../docs/index.html"), "utf8");
 console.log(JSON.stringify(verifyPhw(html)));
+

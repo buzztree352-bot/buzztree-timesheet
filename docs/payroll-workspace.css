@@ -1,0 +1,166 @@
+/* Payroll workspace: layout for the header, section navigation, overview and "not ready" screens.
+   Everything is scoped under body.pw-on (set by PayrollWorkspace.init), so the page looks exactly as
+   before if the script is missing. Colours follow the app: navy #0f2537, teal #0f766e, attendance colours
+   untouched. */
+body.pw-on [hidden]{display:none!important}
+.pw-sr{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+
+/* Keep content clear of the fixed footer (its height is measured, it wraps on phones). */
+body.pw-on{padding-bottom:calc(var(--pw-foot-h,34px) + 24px)}
+body.pw-on .sbtotal{bottom:calc(var(--pw-foot-h,30px) + 4px)}
+
+/* ---------- focus ---------- */
+body.pw-on :focus-visible{outline:3px solid #1d4ed8;outline-offset:2px}
+body.pw-on>header :focus-visible,body.pw-on .pw-ov-head :focus-visible{outline-color:#fcd34d}
+
+/* ---------- header ---------- */
+body.pw-on>header{padding:10px 16px 10px}
+body.pw-on .pw-hrow{gap:8px 10px;align-items:center}
+body.pw-on .pw-primary{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+body.pw-on .pw-edits{display:inline-flex;gap:6px}
+body.pw-on>header .btn{min-height:36px;padding:6px 12px;font-size:13px;line-height:1.2}
+body.pw-on #authBox{display:flex;flex-wrap:wrap;align-items:center;gap:6px;min-width:0;overflow-wrap:anywhere}
+body.pw-on .pw-hrow .prog{flex:1 1 220px;min-width:160px;height:24px;border-radius:12px}
+body.pw-on .pw-hrow .prog>span{line-height:24px;font-size:12px;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.7)}
+body.pw-on .pw-hrow .prog>div{background:#0f766e}
+body.pw-on .pw-hrow .prog.pw-complete>div{background:#15803d}
+body.pw-on .pw-hrow .prog.pw-empty>div{width:0!important;transition:none}
+
+/* More tools */
+body.pw-on .pw-more{position:relative;margin-left:auto}
+body.pw-on .pw-more>summary{list-style:none;cursor:pointer;display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:6px 12px;border-radius:6px;background:#1d4e6b;color:#fff;font-weight:600;font-size:13px;user-select:none}
+body.pw-on .pw-more>summary::-webkit-details-marker{display:none}
+body.pw-on .pw-more>summary::after{content:"\25BE";font-size:11px}
+body.pw-on .pw-more[open]>summary::after{content:"\25B4"}
+body.pw-on .pw-more>summary:hover{filter:brightness(1.15)}
+body.pw-on .pw-more-panel{position:absolute;right:0;top:calc(100% + 6px);z-index:40;width:min(320px,calc(100vw - 32px));max-height:calc(100vh - 140px);overflow:auto;display:grid;gap:12px;padding:12px;background:#0b1d2c;color:#e2e8f0;border:1px solid #2b4a63;border-radius:10px;box-shadow:0 12px 32px rgba(0,0,0,.45)}
+body.pw-on .pw-more-grp{display:grid;gap:6px}
+body.pw-on .pw-more-grp h3{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#9fb6c6;font-weight:700}
+body.pw-on .pw-more-panel .btn{display:flex;align-items:center;width:100%;min-height:40px;text-align:left;background:#1d4e6b!important}
+body.pw-on .pw-more-panel .btn.warn{background:#7c2d12!important}
+body.pw-on .pw-more-panel .unlock{min-height:40px;font-size:13px;gap:10px;cursor:pointer}
+body.pw-on .pw-more-panel .unlock input{width:20px;height:20px;accent-color:#d97706}
+body.pw-on .pw-more-danger{border-top:1px solid #2b4a63;padding-top:12px}
+
+/* ---------- navigation ---------- */
+body.pw-on #tabs.pw-nav{display:block;top:var(--pw-head-h,86px);padding:8px 16px;background:var(--bg);border-bottom:1px solid var(--line)}
+body.pw-on .pw-tabs{list-style:none;display:flex;flex-wrap:wrap;gap:6px;margin:0;padding:0}
+body.pw-on .pw-tabs li{display:flex}
+body.pw-on .pw-nav button{position:relative;display:inline-flex;align-items:center;gap:6px;min-height:36px;border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:20px;padding:6px 14px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap}
+body.pw-on .pw-nav button:hover{border-color:#94a3b8}
+body.pw-on .pw-nav button[aria-current="page"]{background:#0f2537;color:#fff;border-color:#0f2537}
+body.pw-on .pw-sub{margin-top:8px;padding-top:8px;border-top:1px dashed var(--line)}
+body.pw-on .pw-sub button{background:#f8fafc;font-size:12.5px}
+body.pw-on .pw-sub button[aria-current="page"]{background:#0f766e;border-color:#0f766e;color:#fff}
+body.pw-on .pw-badge{position:relative;font-size:11px;font-weight:700;line-height:1.5;background:#e2e8f0;color:#334155;border-radius:10px;padding:0 7px}
+body.pw-on .pw-badge.pw-ok{background:#dcfce7;color:#14532d}
+body.pw-on [aria-current="page"] .pw-badge{background:rgba(255,255,255,.2);color:#fff}
+body.pw-on .pw-navtitle{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-weight:700;color:#0f2537;min-height:36px}
+
+/* ---------- help panel ---------- */
+body.pw-on .pw-help{margin:10px 0 4px;background:#fff;border:1px solid var(--line);border-radius:8px}
+body.pw-on .pw-help>summary{cursor:pointer;padding:8px 12px;min-height:40px;display:flex;align-items:center;font-weight:600;font-size:13px;color:#0f2537}
+body.pw-on .pw-help-body{padding:0 12px 10px}
+body.pw-on .pw-help-body>div:not(.leg){font-size:12.5px;color:var(--mut)}
+
+/* ---------- shared buttons ---------- */
+body.pw-on .pw-btn{display:inline-flex;align-items:center;justify-content:center;min-height:40px;padding:8px 14px;border-radius:6px;border:1px solid #0f766e;background:#0f766e;color:#fff;font-family:inherit;font-size:13px;font-weight:600;line-height:1.2;cursor:pointer}
+body.pw-on .pw-btn:hover{filter:brightness(1.1)}
+body.pw-on .pw-btn.pw-ghost{background:#fff;color:#0f2537;border-color:#94a3b8}
+body.pw-on .pw-btn:disabled{opacity:.6;cursor:progress}
+body.pw-on .pw-link{background:none;border:0;padding:6px 0;min-height:36px;font:inherit;font-weight:700;color:#0f2537;text-decoration:underline;text-underline-offset:3px;cursor:pointer;text-align:left}
+
+/* ---------- overview ---------- */
+body.pw-on .pw-ov{margin:12px 0 24px}
+body.pw-on .pw-ov-head{background:#0f2537;color:#fff;border-radius:10px;padding:14px 18px}
+body.pw-on .pw-ov-head h2{font-size:18px}
+body.pw-on .pw-ov-head p{color:#c7d8e4;font-size:12.5px;margin-top:3px}
+body.pw-on .pw-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-top:12px}
+body.pw-on .pw-stat{background:#163a54;border-radius:8px;padding:8px 12px}
+body.pw-on .pw-stat dt{font-size:12px;color:#c7d8e4}
+body.pw-on .pw-stat dd{font-size:20px;font-weight:800}
+body.pw-on .pw-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:12px;margin-top:12px;align-items:start}
+body.pw-on .pw-card{background:#fff;border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+body.pw-on .pw-card h3{font-size:14px;color:#0f2537;margin-bottom:8px}
+body.pw-on .pw-card p{margin:6px 0}
+body.pw-on .pw-steps-card{grid-column:1/-1}
+body.pw-on .pw-steps{list-style:none;counter-reset:pwstep;display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr))}
+body.pw-on .pw-steps>li{counter-increment:pwstep;border:1px solid var(--line);border-radius:8px;padding:10px 12px;background:#f8fafc}
+body.pw-on .pw-step-t{display:flex;align-items:center;gap:8px;color:#0f2537}
+body.pw-on .pw-step-t::before{content:counter(pwstep);display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;background:#0f766e;color:#fff;font-size:12px}
+body.pw-on .pw-fine{font-size:12px;color:var(--mut)}
+body.pw-on .pw-warn{background:var(--sbg);border-left:3px solid var(--s);padding:5px 9px;border-radius:0 6px 6px 0;font-size:12.5px}
+body.pw-on .pw-ov-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+body.pw-on .pw-teams,body.pw-on .pw-ph{list-style:none;display:grid;gap:4px}
+body.pw-on .pw-team{display:grid;grid-template-columns:minmax(90px,auto) 1fr;align-items:center;gap:2px 12px}
+body.pw-on .pw-team-n{font-size:12.5px;color:var(--mut);text-align:right}
+body.pw-on .pw-meter{grid-column:1/-1;height:8px;background:#e2e8f0;border-radius:6px;overflow:hidden}
+body.pw-on .pw-meter>i{display:block;height:100%;background:#0f766e}
+body.pw-on .pw-meter.pw-ok>i{background:#16a34a}
+body.pw-on .pw-ph li{padding:6px 10px;border-radius:6px;background:var(--phbg);color:#4c1d95;font-size:13px}
+body.pw-on .pw-ph li span{color:#5b21b6}
+
+/* ---------- not ready yet ---------- */
+body.pw-on .pw-un{max-width:720px;margin:16px 0;background:#fff;border:1px solid var(--line);border-left:5px solid #0f766e;border-radius:10px;padding:16px 18px}
+body.pw-on .pw-un-error{border-left-color:#dc2626}
+body.pw-on .pw-un-missing,body.pw-on .pw-un-config{border-left-color:#d97706}
+body.pw-on .pw-un h2{display:flex;align-items:center;gap:10px;font-size:16px;color:#0f2537;margin-bottom:6px}
+body.pw-on .pw-un p{margin:6px 0}
+body.pw-on .pw-code{font-family:ui-monospace,Consolas,monospace;background:#f1f5f9;border-radius:4px;padding:1px 5px;overflow-wrap:anywhere}
+body.pw-on .pw-un-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+body.pw-on .pw-adv{margin-top:16px;border-top:1px dashed var(--line);padding-top:10px}
+body.pw-on .pw-adv>summary{cursor:pointer;min-height:40px;display:flex;align-items:center;font-weight:600;color:#0f2537}
+body.pw-on .pw-adv label{display:block;font-weight:600;margin-top:8px}
+body.pw-on .pw-adv textarea{display:block;width:100%;min-height:120px;margin:4px 0 8px;padding:8px;border:1px solid #94a3b8;border-radius:6px;font:12px/1.4 ui-monospace,Consolas,monospace}
+body.pw-on .pw-msg:empty{display:none}
+body.pw-on .pw-msg{color:#b91c1c;font-weight:600}
+body.pw-on .pw-spin{flex:0 0 auto;width:16px;height:16px;border-radius:50%;border:3px solid #cbd5e1;border-top-color:#0f766e;animation:pwspin 1s linear infinite}
+@keyframes pwspin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){body.pw-on .pw-spin{animation:none}}
+
+/* ---------- dialogs: the app's reset (*{margin:0}) left modal dialogs in the top-left corner ---------- */
+body.pw-on dialog[open]{margin:auto;max-width:calc(100vw - 32px);max-height:calc(100vh - 32px);overflow:auto;box-shadow:0 20px 50px rgba(6,17,28,.35)}
+body.pw-on dialog::backdrop{background:rgba(6,17,28,.55)}
+body.pw-on #runOv{display:flex!important}
+body.pw-on #runOv>div{margin:auto!important;width:100%}
+
+/* ---------- touch screens and phones ---------- */
+@media (pointer:coarse){
+ body.pw-on>header .btn,body.pw-on .pw-more>summary,body.pw-on .pw-nav button,body.pw-on .pw-btn,body.pw-on .pw-link,body.pw-on .pw-help>summary,body.pw-on .pw-adv>summary,body.pw-on .pw-more-panel .unlock,body.pw-on .pw-more-panel .btn{min-height:44px}
+}
+@media (max-width:640px){
+ /* Only the section bar stays pinned on a phone; a tall pinned header would cover the work. */
+ body.pw-on>header{position:relative;top:auto;padding:10px 12px}
+ body.pw-on>header h1{font-size:16px}
+ body.pw-on>header .btn,body.pw-on .pw-more>summary,body.pw-on .pw-nav button,body.pw-on .pw-btn,body.pw-on .pw-link,body.pw-on .pw-help>summary,body.pw-on .pw-adv>summary,body.pw-on .pw-more-panel .unlock,body.pw-on .pw-more-panel .btn{min-height:44px}
+ body.pw-on .pw-hrow .prog{flex:1 1 100%;order:-1}
+ body.pw-on .pw-more{flex:1 1 100%;margin-left:0}
+ body.pw-on .pw-more>summary{display:flex;justify-content:space-between}
+ body.pw-on .pw-more-panel{position:static;width:auto;max-height:none;margin-top:8px;box-shadow:none}
+ body.pw-on #tabs.pw-nav{top:0;padding:6px 0}
+ body.pw-on .pw-tabs{flex-wrap:nowrap;overflow-x:auto;padding:0 12px 4px;scrollbar-width:thin;-webkit-overflow-scrolling:touch}
+ body.pw-on .pw-tabs li{flex:0 0 auto}
+ body.pw-on .pw-sub{margin-top:6px;padding-top:6px}
+ body.pw-on .pw-navtitle{padding:0 12px}
+ body.pw-on .pw-ov-head,body.pw-on .pw-card,body.pw-on .pw-un{padding:12px}
+ body.pw-on .pw-ov-actions .pw-btn,body.pw-on .pw-un-actions .pw-btn{flex:1 1 auto}
+ /* existing views: keep them inside a 390px screen */
+ body.pw-on main{padding:0 10px}
+ body.pw-on .grid{grid-template-columns:repeat(7,minmax(0,1fr));gap:3px}
+ body.pw-on .cell{padding:3px 1px;min-width:0}
+ body.pw-on .cell b{font-size:11px}
+ body.pw-on .body{padding:4px 8px 10px}
+ body.pw-on .sbrow,body.pw-on .frow,body.pw-on .psig{flex-wrap:wrap}
+ body.pw-on .sbrow .name,body.pw-on .frow .name{min-width:0;flex:1 1 140px}
+ body.pw-on .psig{gap:12px 24px}
+ body.pw-on .tools input[type=text]{min-width:0;flex:1 1 160px}
+}
+
+/* ---------- print ---------- */
+@media print{
+ body.pw-on .pw-help,body.pw-on .pw-more,body.pw-on .pw-ov-actions,body.pw-on .pw-un-actions,body.pw-on .pw-adv,body.pw-on .pw-btn,body.pw-on .pw-spin{display:none!important}
+ body.pw-on .pw-ov-head,body.pw-on .pw-stat,body.pw-on .pw-meter>i,body.pw-on .pw-ph li{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+ body.pw-on .pw-card,body.pw-on .pw-steps>li,body.pw-on .pw-un{break-inside:avoid}
+ body.pw-on .pw-link{text-decoration:none}
+}
+

@@ -108,7 +108,8 @@ function selectedPeople(code,test){
  if(test){const pair=PAYPRINTCORE.pair(ps)[0];ps=pair?pair.front.filter(Boolean):[]}
  return{s,ps};
 }
-async function generate(code,test){
+function generate(code,test){if(window.EmploymentReview)return EmploymentReview.guard(()=>generateChecked(code,test));return generateChecked(code,test)}
+async function generateChecked(code,test){
  if(busy)return;
  const{s,ps}=selectedPeople(code,test);if(!ps.length)return;const startScope=scope,startGeneration=generation,stamp=digest(s);busy=true;message="Building printable PDF…";paint();
  try{
@@ -136,3 +137,4 @@ window.PAYPRINTUI={render(el,getSnapshot){
  if(scope!==key){reset();scope=key}paint();
 },clear(){reset();scope="";container=null}};
 })();
+

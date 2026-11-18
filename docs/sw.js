@@ -1,7 +1,7 @@
 /* Buzztree Timesheet — service worker (Contractor-Companion pattern: offline-first app shell) */
-const CACHE_VERSION="bt-ts-v13-public-holidays";
+const CACHE_VERSION="bt-ts-v14-payroll-workspace";
 const CORE=[
-"./","./index.html","./config.js","./emp-core.js","./employees.js","./bulk-core.js","./bulk-attendance.js","./run-holidays.js","./payprint-core.js","./payprint-pdf.js","./payprint.js","./vendor/pdf-lib.min.js","./vendor/pdf.mjs","./vendor/pdf.worker.mjs","./manifest.webmanifest",
+"./","./index.html","./config.js","./emp-core.js","./employees.js","./bulk-core.js","./bulk-attendance.js","./run-holidays.js","./payroll-workspace.js","./payroll-workspace.css","./payroll-status.css","./roster-recovery.js","./employment-review.js","./payprint-core.js","./payprint-pdf.js","./payprint.js","./vendor/pdf-lib.min.js","./vendor/pdf.mjs","./vendor/pdf.worker.mjs","./manifest.webmanifest",
 "https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js",
 "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js",
 "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"
