@@ -108,6 +108,7 @@ footer{position:fixed;bottom:0;left:0;right:0;background:#0f2537;color:#9fb6c6;f
 <script src="employees.js"></script>
 <script src="bulk-core.js"></script>
 <script src="bulk-attendance.js"></script>
+<script src="run-holidays.js"></script>
 <script src="payprint-core.js"></script>
 <script src="payprint-pdf.js"></script>
 <script src="payprint.js"></script>
@@ -130,6 +131,7 @@ footer{position:fixed;bottom:0;left:0;right:0;background:#0f2537;color:#9fb6c6;f
     <button class="btn" id="redoB" style="background:#334155">↷</button>
     <button class="btn" id="linkF" style="background:#4338ca">🔗 Link autosave file</button>
     <button class="btn" id="runB" style="background:#7c3aed">⚙ Run / month</button>
+    <button class="btn" id="holidayB" style="background:#7c3aed">Public holidays</button>
     <button class="btn warn" id="reset">Reset all</button>
     <input type="file" id="jfile" accept=".json" style="display:none">
   </div>
@@ -846,11 +848,16 @@ document.addEventListener("keydown",e=>{const tg=e.target.tagName;if(tg==="INPUT
  if((e.ctrlKey&&e.key.toLowerCase()==="y")||(e.ctrlKey&&e.shiftKey&&e.key.toLowerCase()==="z")){e.preventDefault();redoAct()}});
 document.getElementById("linkF").onclick=linkFile;
 document.getElementById("runB").onclick=runPanel;
+document.getElementById("holidayB").onclick=()=>RunHolidays.open({
+ current:()=>({period:PERIOD,db:FB,user:fbUser,signOnly:SIGNMODE}),entries:()=>st,
+ saved:result=>{PERIOD=result.period;PERIODS=result.list;DATA.days=PERIOD.days;paintPeriod();renderList();queueWrite()},
+ message:ffile
+});
 if(window.showSaveFilePicker){reconnect()}else{ffile("this browser can't autosave to file — use Copy backup",false)}
 lastSnap=JSON.stringify(st);snapUI();cloudInit();
 renderTabs();renderList();
 // ---- Companion-style offline-first (PWA): app shell cached, cold-start works in a dead zone ----
-const APP_VERSION="runs-v25-names";
+const APP_VERSION="runs-v26-public-holidays";
 if("serviceWorker" in navigator&&location.protocol==="https:"){
  navigator.serviceWorker.register("sw.js").then(reg=>{
   reg.addEventListener("updatefound",()=>{const w=reg.installing;if(!w)return;
@@ -866,3 +873,4 @@ if(!navigator.onLine)ffile("OFFLINE \u2014 working from this device; entries que
 </script>
 </body>
 </html>
+
