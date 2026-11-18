@@ -59,6 +59,18 @@ test('cached remote snapshot cannot erase known unsynced device edits before hyd
  h.snapshot({_ts:200,state:{_ts:200,T02:{note:'cached remote'}}},{fromCache:true});assert.equal(h.run('st.T01.note'),'unsynced');
  h.snapshot({_ts:200,state:{_ts:200,T02:{note:'server'}}});assert.equal(h.run('st.T01.note'),'unsynced');assert.equal(h.run('cloudConflict'),true);
 });
+test('new remote edits invalidate undo snapshots based on the previous shared state',()=>{
+ const h=harness();h.run('listenCloud()');h.snapshot({_ts:100,state:{_ts:100}});
+ h.run('undoStack.push("old state");redoStack.push("another old state")');h.snapshot({_ts:200,state:{_ts:200,T01:{note:'new colleague edit'}}});
+ assert.equal(h.run('st.T01.note'),'new colleague edit');assert.equal(h.run('undoStack.length'),0);assert.equal(h.run('redoStack.length'),0);
+});
+test('signing conflict preserves pending data and provides an office handoff without exposing review controls',async()=>{
+ const h=harness();h.ctx.SIGNMODE=true;h.ctx.SIGC=null;h.docs.set('runs/aug-2026',{_ts:150,state:{_ts:150,T02:{note:'office change'}}});
+ h.run('rosterLoaded=true;runReady=true;cloudHydrated=true;remoteStamp=100;st={_ts:200,_sig:{T01:{at:"synthetic",fid:"test-file"}}};cloudPush();');await h.flush();
+ assert.equal(h.writes.length,0);assert.equal(h.run('cloudConflict'),true);assert.equal(h.run('st._sig.T01.fid'),'test-file');assert.equal(h.nodes.reviewCloud.hidden,true);assert.match(h.nodes.fcloud.textContent,/office review needed on this device/);
+ h.ctx.host={innerHTML:''};h.run(slice('function renderReceipts(L){','function printSnapshot('));h.run('renderReceipts(host)');
+ assert.match(h.ctx.host.innerHTML,/same browser/);assert.doesNotMatch(h.ctx.host.innerHTML,/data-sig=|<button/);
+});
 test('newer legacy device copy without a known base is never uploaded automatically',async()=>{
  const h=harness();h.run('st={_ts:200,T01:{note:"local"}};listenCloud();');h.snapshot({_ts:100,state:{_ts:100}});await h.flush();
  assert.equal(h.writes.length,0);assert.equal(h.run('cloudConflict'),true);

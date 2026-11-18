@@ -178,6 +178,7 @@ let runGeneration=0,unsubscribeCloud=null,rosterRequest=0,loadTimer=null;
 let remoteStamp=0,cloudPending=false,cloudWriting=false,cloudConflict=false;
 function statusText(id,text,tone){const el=document.getElementById(id);if(el){el.textContent=text;el.dataset.tone=tone||"neutral"}}
 function cloudStatus(text,tone){
+ if(SIGNMODE&&cloudConflict){text="signing paused — office review needed on this device";tone="error"}
  statusText("fcloud","Cloud: "+text,tone);
  const retry=document.getElementById("retryCloud"),review=document.getElementById("reviewCloud");
  if(retry)retry.hidden=!cloudPending||cloudWriting||cloudConflict;
@@ -201,7 +202,7 @@ function savedCloudBase(){try{const x=localStorage.getItem(KEY+"-cloud-base");re
 async function reloadRun(){
  if(!FB||!fbUser){renderAuth();renderTabs();renderList();return}
  if(cloudPending||cloudWriting||cloudConflict){
-  ffile("This device has unsynced changes. Download a backup before reloading. Use Retry cloud save if the connection failed.",false);
+  ffile(SIGNMODE?"Keep this page open. Ask the office to open the normal app in this same browser and review this device’s pending copy. Do not clear browser data.":"This device has unsynced changes. Download a backup before reloading. Use Retry cloud save if the connection failed.",false);
   return;
  }
  await loadPeriod();
@@ -291,6 +292,7 @@ function cloudPush(){
    if(e.code==="run-conflict")cloudConflict=true;
    cloudStatus(cloudConflict?"another device changed this run — review needed":"save failed — retry when connected","error");
    ffile(e.message||"Cloud save was not confirmed. Your device copy is retained.",false);
+   if(SIGNMODE&&cloudConflict){SIGC=null;renderTabs();renderList()}
   }
  },900);
 }
@@ -376,7 +378,7 @@ function listenCloud(){
   }else if(stamp>remoteStamp){
    if(cloudWriting)return;
    if(cloudPending){cloudConflict=true;cloudStatus("another device changed this run — review needed","error")}
-   else{remoteStamp=stamp;st=j.state||{};lastSnap=JSON.stringify(st);persistDevice();markCloudBase(stamp);cloudStatus("updated from cloud "+new Date().toLocaleTimeString(),"ok")}
+   else{remoteStamp=stamp;st=j.state||{};lastSnap=JSON.stringify(st);undoStack=[];redoStack=[];persistDevice();markCloudBase(stamp);cloudStatus("updated from cloud "+new Date().toLocaleTimeString(),"ok")}
   }
   snapUI();renderTabs();renderList();
  },e=>{if(generation===runGeneration){clearTimeout(loadTimer);runLoadFailed(e)}});
@@ -869,6 +871,7 @@ function sigRegisterView(L){
  h+='<div style="font-size:12px;color:var(--mut);margin:12px 4px">Distributed by: ____________________  Signature: ____________________  Date: ________</div>';
  const dv=document.createElement("div");dv.innerHTML=h;L.appendChild(dv);}
 function renderReceipts(L){
+ if(SIGNMODE&&cloudConflict){L.innerHTML='<section class="banner" role="alert"><h2>Signing paused — ask the office to review this device</h2><p>This run changed on another device. Signatures in this device’s copy have not been confirmed in the shared run.</p><p>Keep this page open and do not clear browser data. Ask the office to open the normal timesheet app (without the signing-only link) in this same browser, choose <b>Review sync conflict</b>, and save the recovery copy before deciding which version to use.</p><p>Resume signing only after the office has resolved the conflict and this page has reloaded the shared run.</p></section>';return}
  if(window._sigprint){sigRegisterView(L);return}
  /* Slips on hold live in THIS run's state (st._hold = {code: reason}), set from the office view.
     Never hardcode codes here: the file is public and a hold only applies to the month it was set in. */
@@ -1000,10 +1003,11 @@ document.addEventListener("click",ev=>{
   else{const r=prompt("Why is "+c+"'s slip on hold? This shows on the signing screen for "+PLBL()+" only.","slip being reissued");
    if(!r)return;st._hold[c]=r;logEdit(c,"SLIP-HOLD","",r,r)}
   save();renderList();return}
- const sgb=ev.target.closest("[data-sig]");if(sgb){SIGC=sgb.dataset.sig;sigDrawn=false;renderList();return}
+ const sgb=ev.target.closest("[data-sig]");if(sgb){if(cloudConflict){renderList();return}SIGC=sgb.dataset.sig;sigDrawn=false;renderList();return}
  if(ev.target.closest("[data-sigcancel]")){SIGC=null;renderList();return}
  if(ev.target.closest("[data-sigclear]")){const cv=document.getElementById("sigC");cv.getContext("2d").clearRect(0,0,cv.width,cv.height);sigDrawn=false;return}
  const sgs=ev.target.closest("[data-sigsave]");if(sgs){const code=sgs.dataset.sigsave;
+   if(cloudConflict){SIGC=null;renderList();alert("Signing is paused until the office reviews the sync conflict on this device.");return}
    if(!sigDrawn){alert("Nothing signed yet — let them sign first");return}
    const cv=document.getElementById("sigC");const b64=cv.toDataURL("image/png").split(",")[1];
    const e=EMPS().find(x=>x.c===code);
