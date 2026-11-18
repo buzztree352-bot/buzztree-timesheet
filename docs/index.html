@@ -176,6 +176,7 @@ let RUNID="aug-2026";let FB=null,fbUser=null,cloudTimer=null;
 let rosterLoading=false,rosterError="",runReady=false,cloudHydrated=false;
 let runGeneration=0,unsubscribeCloud=null,rosterRequest=0,loadTimer=null;
 let remoteStamp=0,cloudPending=false,cloudWriting=false,cloudConflict=false;
+let deferredCloudRefresh=null;
 function statusText(id,text,tone){const el=document.getElementById(id);if(el){el.textContent=text;el.dataset.tone=tone||"neutral"}}
 function cloudStatus(text,tone){
  if(SIGNMODE&&cloudConflict){text="signing paused — office review needed on this device";tone="error"}
@@ -191,6 +192,7 @@ function stopRunSession(){
  runReady=false;cloudHydrated=false;rosterLoaded=false;rosterMissing=false;rosterLoading=false;rosterError="";
  const notice=document.getElementById("appNotice");if(notice)notice.textContent="";
  cloudPending=false;cloudWriting=false;cloudConflict=false;remoteStamp=0;
+ deferredCloudRefresh=null;
  DATA.emps=[];DATA.standby=[];
 }
 function persistDevice(){
@@ -284,6 +286,7 @@ function cloudPush(){
    if(generation!==runGeneration)return;
    remoteStamp=stamp;markCloudBase(stamp);cloudWriting=false;
    cloudPending=(st._ts||0)!==stamp;
+   if(deferredCloudRefresh){const resume=deferredCloudRefresh;deferredCloudRefresh=null;resume();if(cloudConflict)return}
    cloudStatus(cloudPending?"more changes waiting to sync…":"synced "+new Date().toLocaleTimeString(),cloudPending?"warn":"ok");
    if(cloudPending)cloudPush();
   }catch(e){
@@ -350,7 +353,7 @@ function listenCloud(){
   rosterError="The roster loaded, but payroll entries are still unavailable. Check your connection and retry.";
   cloudStatus("entries are taking longer to load","warn");renderList();
  },15000);
- unsubscribeCloud=FB.collection("runs").doc(run).onSnapshot({includeMetadataChanges:true},d=>{
+ unsubscribeCloud=FB.collection("runs").doc(run).onSnapshot({includeMetadataChanges:true},function receive(d){
   if(generation!==runGeneration||run!==RUNID||!fbUser)return;
   const meta=d.metadata||{};
   if(meta.hasPendingWrites)return;
@@ -376,7 +379,7 @@ function listenCloud(){
     persistDevice();markCloudBase(stamp);cloudStatus("loaded "+new Date().toLocaleTimeString(),"ok");
    }
   }else if(stamp>remoteStamp){
-   if(cloudWriting)return;
+   if(cloudWriting){deferredCloudRefresh=()=>receive(d);return}
    if(cloudPending){cloudConflict=true;cloudStatus("another device changed this run — review needed","error")}
    else{remoteStamp=stamp;st=j.state||{};lastSnap=JSON.stringify(st);undoStack=[];redoStack=[];persistDevice();markCloudBase(stamp);cloudStatus("updated from cloud "+new Date().toLocaleTimeString(),"ok")}
   }
@@ -388,6 +391,7 @@ async function idbSet(k,v){const d=await idb();return new Promise((res,rej)=>{co
 async function idbGet(k){const d=await idb();return new Promise((res,rej)=>{const rq=d.transaction("kv").objectStore("kv").get(k);rq.onsuccess=()=>res(rq.result);rq.onerror=()=>rej(rq.error)})}
 function ffile(msg,ok){
  // Legacy callers report app messages here; backup and cloud statuses have dedicated channels.
+ if(SIGNMODE&&cloudConflict){msg="Pending device changes are preserved. Ask the office to review this same browser before resuming signing.";ok=false}
  const el=document.getElementById("appNotice");if(el){el.textContent=msg;el.className="banner";el.dataset.tone=ok?"ok":"warn"}
 }
 function fileStatus(msg,ok){statusText("ffile","Backup file: "+msg,ok?"ok":"warn")}

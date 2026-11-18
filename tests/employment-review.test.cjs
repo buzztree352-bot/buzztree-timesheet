@@ -34,3 +34,8 @@ test('changing payroll during a review blocks continuation',async()=>{
 test('failed server check never falls back to cached employment eligibility',async()=>{
  const h=harness([]);h.context.FB.collection=()=>({get:async()=>{throw Error('offline')}});let exported=0;await h.review.guard(()=>exported++);assert.equal(exported,0);assert.equal(h.dialogs.length,0);assert.match(h.alerts[0],/could not be checked/);
 });
+test('status check preserves an open employee form and prefills a matching prior reason safely',async()=>{
+ const master=[{code:'TEST01',status:'inactive'}],h=harness(master);h.context.cur='__EMP__';let renders=0;h.context.renderList=()=>renders++;
+ const x=assess(roster,[{eid:'0',...master[0]}],period)[0];h.context.st._employmentReview={TEST01:{fingerprint:x.fingerprint,reason:'Checked <final pay> carefully'}};
+ await h.review.guard();assert.equal(renders,0);assert.match(h.dialogs[0].innerHTML,/Checked &lt;final pay&gt; carefully/);assert.equal(h.saved(),0);
+});

@@ -85,6 +85,12 @@ test('successful cloud save acknowledges exact snapshot and records base',async(
  h.run('rosterLoaded=true;runReady=true;cloudHydrated=true;remoteStamp=100;st={_ts:200,T01:{note:"keep"}};cloudPush();');await h.flush();
  assert.equal(h.writes.length,1);assert.equal(h.writes[0].path,'runs/aug-2026');assert.equal(h.writes[0].value.state.T01.note,'keep');assert.equal(h.run('cloudPending'),false);assert.equal(h.cache.get('test-run-cloud-base'),'200');
 });
+test('remote snapshot arriving during a write is applied after that write finishes',async()=>{
+ const h=harness();h.docs.set('runs/aug-2026',{_ts:100,state:{_ts:100}});h.run('rosterLoaded=true;listenCloud()');h.snapshot({_ts:100,state:{_ts:100}});
+ const transaction=h.ctx.db.runTransaction;h.ctx.db.runTransaction=async fn=>{await transaction(fn);const remote={_ts:300,state:{_ts:300,T02:{note:'arrived during write'}}};h.docs.set('runs/aug-2026',remote);h.snapshot(remote)};
+ h.run('st={_ts:200,T01:{note:"local"}};cloudPush()');await h.flush();
+ assert.equal(h.run('remoteStamp'),300);assert.equal(h.run('st.T02.note'),'arrived during write');assert.equal(h.run('cloudPending'),false);
+});
 test('run switch cancels pending cloud writes',async()=>{
  const h=harness();h.run('rosterLoaded=true;runReady=true;cloudHydrated=true;st={_ts:200};cloudPush();stopRunSession();RUNID="nov-2026";');await h.flush();assert.equal(h.writes.length,0);
 });
